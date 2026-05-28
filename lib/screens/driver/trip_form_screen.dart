@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -36,8 +37,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   final _notesController = TextEditingController();
   
   DateTime _selectedDate = DateTime.now();
-  File? _billImage;
-  File? _receiptImage;
+  XFile? _billImage;
+  XFile? _receiptImage;
   bool _isLoading = false;
 
   final ImagePicker _picker = ImagePicker();
@@ -86,9 +87,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     if (image != null) {
       setState(() {
         if (isBill) {
-          _billImage = File(image.path);
+          _billImage = image;
         } else {
-          _receiptImage = File(image.path);
+          _receiptImage = image;
         }
       });
     }
@@ -163,7 +164,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     }
   }
 
-  Widget _buildImagePicker(String title, File? image, bool isBill) {
+  Widget _buildImagePicker(String title, XFile? image, bool isBill) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -182,7 +183,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
             child: image != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.file(image, fit: BoxFit.cover),
+                    child: kIsWeb ? Image.network(image.path, fit: BoxFit.cover) : Image.file(File(image.path), fit: BoxFit.cover),
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,

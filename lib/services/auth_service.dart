@@ -89,6 +89,6 @@ class AuthService {
   }
 
   Future<void> createUserProfile(UserModel userModel) async {
-    await _supabase.from('users').insert(userModel.toJson());
+    await _supabase.from('users').upsert(userModel.toJson());
   }
 }

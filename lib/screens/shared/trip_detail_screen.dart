@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -194,24 +195,27 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  trip.vehicleNumber,
-                  style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Date: ${Formatters.formatDate(trip.tripDate)}',
-                  style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Driver ID: ${trip.driverId}',
-                  style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 13),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    trip.vehicleNumber,
+                    style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Date: ${Formatters.formatDate(trip.tripDate)}',
+                    style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Driver ID: ${trip.driverId}',
+                    style: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
             StatusBadge(status: trip.status),
           ],
@@ -391,9 +395,13 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
     } else {
       imageWidget = ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.file(File(path), height: 100, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
-          return const Icon(Icons.broken_image, color: Colors.grey);
-        }),
+        child: kIsWeb 
+            ? Image.network(path, height: 100, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.broken_image, color: Colors.grey);
+              })
+            : Image.file(File(path), height: 100, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.broken_image, color: Colors.grey);
+              }),
       );
     }
 
@@ -412,7 +420,7 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
                       child: InteractiveViewer(
                         child: path.startsWith('http')
                             ? Image.network(path)
-                            : Image.file(File(path)),
+                            : (kIsWeb ? Image.network(path) : Image.file(File(path))),
                       ),
                     ),
                   );

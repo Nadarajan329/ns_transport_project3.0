@@ -1,4 +1,4 @@
--- Supabase Setup Script for NS Transport 3.0
+-- -- Supabase Setup Script for NS Transport 3.0
 
 -- Create custom types (optional, can also use TEXT)
 -- CREATE TYPE user_role AS ENUM ('owner', 'driver');
@@ -48,20 +48,26 @@ CREATE INDEX idx_trips_status ON public.trips(status);
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trips ENABLE ROW LEVEL SECURITY;
 
+-- Helper function to check if current user is owner (bypasses RLS to prevent infinite recursion)
+CREATE OR REPLACE FUNCTION public.is_owner()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'owner'
+  );
+$$ LANGUAGE sql SECURITY DEFINER;
+
 -- Users policies
 CREATE POLICY "Users can view their own profile" ON public.users
   FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "Owners can view all users" ON public.users
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.users u
-      WHERE u.id = auth.uid() AND u.role = 'owner'
-    )
-  );
+  FOR SELECT USING ( public.is_owner() );
 
 CREATE POLICY "Users can update their own profile" ON public.users
   FOR UPDATE USING (auth.uid() = id);
+
+CREATE POLICY "Users can insert their own profile" ON public.users
+  FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Trips policies
 CREATE POLICY "Drivers can view their own trips" ON public.trips
@@ -92,3 +98,30 @@ CREATE POLICY "Public Access to trip_images" ON storage.objects
 
 CREATE POLICY "Authenticated users can upload to trip_images" ON storage.objects
   FOR INSERT WITH CHECK (bucket_id = 'trip_images' AND auth.role() = 'authenticated');
+
+-- Salaries table
+CREATE TABLE public.salaries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  driver_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+  total_salary NUMERIC(10,2) DEFAULT 0 NOT NULL,
+  paid_amount NUMERIC(10,2) DEFAULT 0 NOT NULL,
+  advance_amount NUMERIC(10,2) DEFAULT 0 NOT NULL,
+  remaining_balance NUMERIC(10,2),
+  month INTEGER NOT NULL,
+  year INTEGER NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Index
+CREATE INDEX idx_salaries_driver_id ON public.salaries(driver_id);
+
+-- Row Level Security for Salaries
+ALTER TABLE public.salaries ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Owners can manage all salaries" ON public.salaries
+  FOR ALL USING ( public.is_owner() );
+
+CREATE POLICY "Drivers can view their own salaries" ON public.salaries
+  FOR SELECT USING (auth.uid() = driver_id);
+

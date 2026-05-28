@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:ns_transport/models/trip_model.dart';
 import 'package:ns_transport/core/errors/failure.dart';
 import 'package:ns_transport/services/supabase_service.dart';
@@ -107,11 +107,16 @@ class TripService {
     }
   }
 
-  Future<String> uploadImage(File file, String folder) async {
+  Future<String> uploadImage(XFile file, String folder) async {
     try {
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.name}';
       final path = '$folder/$fileName';
-      await _supabase.storage.from('trip_images').upload(path, file);
+      final bytes = await file.readAsBytes();
+      await _supabase.storage.from('trip_images').uploadBinary(
+        path, 
+        bytes, 
+        fileOptions: FileOptions(contentType: 'image/${file.name.split('.').last}'),
+      );
       return _supabase.storage.from('trip_images').getPublicUrl(path);
     } catch (e) {
       throw ServerFailure(message: 'Failed to upload image: $e');

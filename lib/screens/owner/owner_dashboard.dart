@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:ns_transport/providers/trip_provider.dart';
 import 'package:ns_transport/widgets/app_drawer.dart';
-import 'package:ns_transport/widgets/summary_card.dart';
-import 'package:ns_transport/widgets/status_badge.dart';
 import 'package:ns_transport/routes/app_routes.dart';
 
 class OwnerDashboard extends ConsumerStatefulWidget {
@@ -27,6 +24,47 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
     await ref.read(tripProvider.notifier).loadTrips();
   }
 
+  Widget _buildStatCard(String title, String value, IconData icon, Color iconColor) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.05),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: iconColor, size: 32),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tripState = ref.watch(tripProvider);
@@ -34,7 +72,6 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
     int totalTrips = 0;
     int pendingReports = 0;
     double totalIncome = 0;
-    double netProfit = 0;
 
     final trips = tripState.value ?? [];
     
@@ -44,18 +81,18 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
         pendingReports++;
       }
       totalIncome += trip.rentAmount;
-      netProfit += (trip.netProfit ?? 0.0);
     }
 
-    // Filter to get submitted trips and take the first few (assuming latest are first or we could sort)
-    final recentSubmittedTrips = trips.where((t) => t.status == 'submitted').toList();
-    final recentTrips = recentSubmittedTrips.take(5).toList();
-
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Owner Dashboard'),
-        backgroundColor: const Color(0xFF1565C0), // Primary
+        title: const Text(
+          'Owner Dashboard',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+        ),
+        backgroundColor: const Color(0xFF1976D2),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       drawer: const AppDrawer(),
       body: tripState.isLoading
@@ -64,178 +101,150 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
               onRefresh: _refresh,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Welcome Banner
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3EDF7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Welcome to NS\nTransport',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF102A43),
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Manage your employees, approve submissions,\nand track performance efficiently.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF334E68),
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    const Text(
+                      'Quick Statistics',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF102A43),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     GridView.count(
                       crossAxisCount: 2,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      childAspectRatio: 1.2,
+                      childAspectRatio: 1.1,
                       children: [
-                        SummaryCard(
-                          title: 'Total Trips',
-                          value: totalTrips.toString(),
-                          icon: Icons.local_shipping,
-                          color: const Color(0xFF1565C0), // Primary
+                        _buildStatCard(
+                          'Total Employees',
+                          '--',
+                          Icons.people,
+                          const Color(0xFF3498DB), // Blue
                         ),
-                        SummaryCard(
-                          title: 'Pending Reports',
-                          value: pendingReports.toString(),
-                          icon: Icons.pending_actions,
-                          color: Colors.orange,
+                        _buildStatCard(
+                          'Pending Approvals',
+                          pendingReports.toString(),
+                          Icons.assignment_turned_in,
+                          const Color(0xFFF39C12), // Orange
                         ),
-                        SummaryCard(
-                          title: 'Total Income',
-                          value: '₹${totalIncome.toStringAsFixed(0)}',
-                          icon: Icons.account_balance_wallet,
-                          color: Colors.green,
+                        _buildStatCard(
+                          'Monthly Earnings',
+                          '₹${totalIncome.toStringAsFixed(0)}',
+                          Icons.trending_up,
+                          const Color(0xFF2ECC71), // Green
                         ),
-                        SummaryCard(
-                          title: 'Net Profit',
-                          value: '₹${netProfit.toStringAsFixed(0)}',
-                          icon: Icons.trending_up,
-                          color: const Color(0xFF42A5F5), // PrimaryLight
+                        _buildStatCard(
+                          'Total Trips',
+                          totalTrips.toString(),
+                          Icons.directions_car,
+                          const Color(0xFF9B59B6), // Purple
                         ),
                       ],
                     ),
                     const SizedBox(height: 32),
-                    Text(
-                      'Income & Profit Overview',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 220,
-                      child: BarChart(
-                        BarChartData(
-                          alignment: BarChartAlignment.spaceAround,
-                          maxY: (totalIncome > 0 ? totalIncome : 10000) * 1.2,
-                          barTouchData: BarTouchData(enabled: true),
-                          titlesData: FlTitlesData(
-                            show: true,
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (value, meta) {
-                                  if (value == 0) return const Text('Income');
-                                  if (value == 1) return const Text('Profit');
-                                  return const Text('');
-                                },
-                              ),
-                            ),
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 40,
-                                getTitlesWidget: (value, meta) {
-                                  if (value == 0) return const Text('');
-                                  return Text('${(value / 1000).toStringAsFixed(0)}k', style: const TextStyle(fontSize: 10));
-                                },
-                              ),
-                            ),
-                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          ),
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: false,
-                            getDrawingHorizontalLine: (value) => FlLine(
-                              color: Colors.grey.withValues(alpha: 0.2),
-                              strokeWidth: 1,
-                            ),
-                          ),
-                          borderData: FlBorderData(show: false),
-                          barGroups: [
-                            BarChartGroupData(
-                              x: 0,
-                              barRods: [
-                                BarChartRodData(
-                                  toY: totalIncome,
-                                  color: Colors.green,
-                                  width: 24,
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                                ),
-                              ],
-                            ),
-                            BarChartGroupData(
-                              x: 1,
-                              barRods: [
-                                BarChartRodData(
-                                  toY: netProfit,
-                                  color: const Color(0xFF42A5F5),
-                                  width: 24,
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                    const Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF102A43),
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 140,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1976D2),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Quick actions row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildActionButton(Icons.person_add, 'Add Driver'),
+                        _buildActionButton(Icons.add_road, 'New Route'),
+                        _buildActionButton(Icons.receipt_long, 'Reports'),
+                      ],
                     ),
                     const SizedBox(height: 32),
-                    Text(
-                      'Recent Submitted Trips',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    if (recentTrips.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: const Text('No pending submitted trips.'),
-                      )
-                    else
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: recentTrips.length,
-                        itemBuilder: (context, index) {
-                          final trip = recentTrips[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey.shade200),
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              title: Text(
-                                trip.vehicleNumber,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
-                                child: Text(
-                                  '${trip.fromLocation} → ${trip.toLocation}',
-                                ),
-                              ),
-                              trailing: StatusBadge(status: trip.status),
-                              onTap: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.tripDetail,
-                                  arguments: trip.id,
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    const SizedBox(height: 24),
                   ],
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, String label) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.08),
+                spreadRadius: 2,
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: const Color(0xFF1976D2), size: 28),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF334E68),
+          ),
+        ),
+      ],
     );
   }
 }

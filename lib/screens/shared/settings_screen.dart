@@ -174,7 +174,8 @@ class SettingsScreen extends ConsumerWidget {
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.red),
-                    title: const Text('Sign Out', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    title: const Text('Sign Out'),
+                    textColor: Colors.red,
                     onTap: () async {
                       final confirm = await showDialog<bool>(
                         context: context,
