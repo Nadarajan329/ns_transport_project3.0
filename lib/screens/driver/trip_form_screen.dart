@@ -1,0 +1,379 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+
+import 'package:ns_transport/models/trip_model.dart';
+import 'package:ns_transport/providers/auth_provider.dart';
+import 'package:ns_transport/providers/trip_provider.dart';
+import 'package:ns_transport/widgets/custom_text_field.dart';
+
+class TripFormScreen extends ConsumerStatefulWidget {
+  const TripFormScreen({super.key});
+
+  @override
+  ConsumerState<TripFormScreen> createState() => _TripFormScreenState();
+}
+
+class _TripFormScreenState extends ConsumerState<TripFormScreen> {
+  final _formKey = GlobalKey<FormState>();
+  
+  final _vehicleNumberController = TextEditingController();
+  final _dateController = TextEditingController();
+  final _fromLocationController = TextEditingController();
+  final _toLocationController = TextEditingController();
+  final _loadTypeController = TextEditingController();
+  final _customerNameController = TextEditingController();
+  
+  final _rentAmountController = TextEditingController();
+  final _fuelExpenseController = TextEditingController();
+  final _tollExpenseController = TextEditingController();
+  final _foodExpenseController = TextEditingController();
+  final _otherExpenseController = TextEditingController();
+  final _advanceAmountController = TextEditingController();
+  
+  final _notesController = TextEditingController();
+  
+  DateTime _selectedDate = DateTime.now();
+  File? _billImage;
+  File? _receiptImage;
+  bool _isLoading = false;
+
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _dateController.text = "${_selectedDate.toLocal()}".split(' ')[0];
+  }
+
+  @override
+  void dispose() {
+    _vehicleNumberController.dispose();
+    _dateController.dispose();
+    _fromLocationController.dispose();
+    _toLocationController.dispose();
+    _loadTypeController.dispose();
+    _customerNameController.dispose();
+    _rentAmountController.dispose();
+    _fuelExpenseController.dispose();
+    _tollExpenseController.dispose();
+    _foodExpenseController.dispose();
+    _otherExpenseController.dispose();
+    _advanceAmountController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _dateController.text = "${_selectedDate.toLocal()}".split(' ')[0];
+      });
+    }
+  }
+
+  Future<void> _pickImage(bool isBill) async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        if (isBill) {
+          _billImage = File(image.path);
+        } else {
+          _receiptImage = File(image.path);
+        }
+      });
+    }
+  }
+
+  Future<void> _submit(String status) async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = ref.read(authProvider).value;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User not authenticated')),
+        );
+        return;
+      }
+
+      String? billUrl;
+      String? receiptUrl;
+
+      if (_billImage != null) {
+        billUrl = await ref.read(tripServiceProvider).uploadImage(_billImage!, 'bills');
+      }
+      if (_receiptImage != null) {
+        receiptUrl = await ref.read(tripServiceProvider).uploadImage(_receiptImage!, 'receipts');
+      }
+
+      final trip = TripModel(
+        driverId: user.id,
+        vehicleNumber: _vehicleNumberController.text,
+        tripDate: _selectedDate,
+        fromLocation: _fromLocationController.text,
+        toLocation: _toLocationController.text,
+        loadType: _loadTypeController.text.isEmpty ? null : _loadTypeController.text,
+        customerName: _customerNameController.text,
+        rentAmount: double.tryParse(_rentAmountController.text) ?? 0.0,
+        fuelExpense: double.tryParse(_fuelExpenseController.text) ?? 0.0,
+        tollExpense: double.tryParse(_tollExpenseController.text) ?? 0.0,
+        foodExpense: double.tryParse(_foodExpenseController.text) ?? 0.0,
+        otherExpense: double.tryParse(_otherExpenseController.text) ?? 0.0,
+        advanceAmount: double.tryParse(_advanceAmountController.text) ?? 0.0,
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
+        status: status,
+        billImage: billUrl,
+        receiptImage: receiptUrl,
+      );
+
+      await ref.read(tripProvider.notifier).addTrip(trip);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(status == 'draft' ? 'Draft saved' : 'Trip submitted successfully')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save trip: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildImagePicker(String title, File? image, bool isBill) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => _pickImage(isBill),
+          child: Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              border: Border.all(color: Colors.grey.shade300, width: 1.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: image != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(image, fit: BoxFit.cover),
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_photo_alternate, size: 40, color: Colors.grey.shade400),
+                      const SizedBox(height: 8),
+                      Text('Tap to select image', style: GoogleFonts.inter(color: Colors.grey.shade500)),
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = const Color(0xFF1565C0);
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('New Trip', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+      ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('General Details', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor)),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _vehicleNumberController,
+                    label: 'Vehicle Number',
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () => _pickDate(context),
+                    child: IgnorePointer(
+                      child: CustomTextField(
+                        controller: _dateController,
+                        label: 'Date',
+                        prefixIcon: Icons.calendar_today,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _fromLocationController,
+                    label: 'From Location',
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _toLocationController,
+                    label: 'To Location',
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _loadTypeController,
+                    label: 'Load Type (Optional)',
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _customerNameController,
+                    label: 'Customer Name',
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  Text('Financial Details', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor)),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _rentAmountController,
+                    label: 'Rent Amount',
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _advanceAmountController,
+                    label: 'Advance Amount',
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _fuelExpenseController,
+                    label: 'Fuel Expense',
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _tollExpenseController,
+                    label: 'Toll Expense',
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _foodExpenseController,
+                    label: 'Food Expense',
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _otherExpenseController,
+                    label: 'Other Expense',
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+
+                  const SizedBox(height: 32),
+                  Text('Attachments & Notes', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor)),
+                  const SizedBox(height: 16),
+                  _buildImagePicker('Bill Image', _billImage, true),
+                  const SizedBox(height: 16),
+                  _buildImagePicker('Fuel Receipt', _receiptImage, false),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _notesController,
+                    maxLines: 4,
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Notes',
+                      labelStyle: GoogleFonts.inter(color: Colors.grey.shade700),
+                      alignLabelWithHint: true,
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _submit('draft'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(color: primaryColor, width: 2),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text('Save as Draft', style: GoogleFonts.inter(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _submit('submitted'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text('Submit Report', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+}
