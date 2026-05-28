@@ -7,6 +7,7 @@ class SalaryModel {
   final double? remainingBalance;
   final int month;
   final int year;
+  final int? day;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -19,6 +20,7 @@ class SalaryModel {
     this.remainingBalance,
     required this.month,
     required this.year,
+    this.day,
     this.createdAt,
     this.updatedAt,
   });
@@ -33,6 +35,7 @@ class SalaryModel {
       remainingBalance: json['remaining_balance'] != null ? (json['remaining_balance'] as num).toDouble() : null,
       month: json['month'] as int,
       year: json['year'] as int,
+      day: json['day'] as int?,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : null,
     );
@@ -48,6 +51,7 @@ class SalaryModel {
       if (remainingBalance != null) 'remaining_balance': remainingBalance,
       'month': month,
       'year': year,
+
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
     };
@@ -67,6 +71,7 @@ class SalaryModel {
     double? remainingBalance,
     int? month,
     int? year,
+    int? day,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -79,6 +84,7 @@ class SalaryModel {
       remainingBalance: remainingBalance ?? this.remainingBalance,
       month: month ?? this.month,
       year: year ?? this.year,
+      day: day ?? this.day,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

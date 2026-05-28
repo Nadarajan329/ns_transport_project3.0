@@ -51,10 +51,10 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
       appBar: AppBar(
         title: Text(
           'Driver Dashboard',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
       drawer: const AppDrawer(),

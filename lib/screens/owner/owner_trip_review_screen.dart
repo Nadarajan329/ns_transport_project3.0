@@ -24,7 +24,9 @@ class _OwnerTripReviewScreenState extends ConsumerState<OwnerTripReviewScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trip Reviews'),
+        title: const Text('Trip Reviews', style: TextStyle(color: Colors.white, inherit: false)),
+        backgroundColor: const Color(0xFF1565C0),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: const AppDrawer(),
       body: tripsAsync.when(

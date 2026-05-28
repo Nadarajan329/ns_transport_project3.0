@@ -618,6 +618,25 @@ class AppTheme {
           ),
         ),
       ),
+
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        titleTextStyle: GoogleFonts.inter(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: const Color(0xFFE0E0E0),
+        ),
+        subtitleTextStyle: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          color: const Color(0xFFBDBDBD),
+        ),
+        iconColor: const Color(0xFFBDBDBD),
+        dense: false,
+      ),
     );
   }
 

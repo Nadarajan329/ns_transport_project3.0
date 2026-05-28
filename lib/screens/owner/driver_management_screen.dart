@@ -27,9 +27,9 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Manage Drivers'),
+        title: const Text('Manage Drivers', style: TextStyle(color: Colors.white, inherit: false)),
         backgroundColor: const Color(0xFF1565C0),
-        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: const AppDrawer(),
       body: driversAsync.when(
@@ -90,6 +90,13 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/owner/employee-detail',
+                              arguments: driver,
+                            );
+                          },
                           leading: CircleAvatar(
                             backgroundColor: const Color(0xFF42A5F5),
                             radius: 24,

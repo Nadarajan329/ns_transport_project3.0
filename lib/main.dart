@@ -40,7 +40,7 @@ class NSTransportApp extends ConsumerWidget {
       title: 'NS Transport',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: ThemeData.dark(), // Provide darkTheme implementation if available in AppTheme
+      darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.generateRoute,

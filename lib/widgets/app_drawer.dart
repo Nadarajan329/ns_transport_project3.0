@@ -10,57 +10,31 @@ class AppDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).value;
 
-    final name = user?.name ?? 'User';
-    final email = user?.email ?? '';
-    final role = user?.role ?? '';
     final isOwner = user?.isOwner ?? false;
     final isDriver = user?.isDriver ?? false;
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final avatarUrl = user?.avatarUrl;
 
     return Drawer(
       child: Column(
         children: [
-          UserAccountsDrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-            ),
-            accountName: Text(
-              name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            accountEmail: Column(
+          Container(
+            width: double.infinity,
+            color: const Color(0xFF3C5A80), // Slate blue matching the image
+            padding: const EdgeInsets.only(top: 60, left: 24, bottom: 24),
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(email),
-                const SizedBox(height: 2),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    role.toUpperCase(),
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                Icon(Icons.domain, color: Colors.white, size: 48),
+                SizedBox(height: 16),
+                Text(
+                  'NS Transport',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
                   ),
                 ),
               ],
-            ),
-            currentAccountPicture: CircleAvatar(
-              backgroundColor: Colors.white,
-              backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-              child: avatarUrl == null
-                  ? Text(
-                      initial,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    )
-                  : null,
             ),
           ),
           Expanded(
@@ -68,48 +42,66 @@ class AppDrawer extends ConsumerWidget {
               padding: EdgeInsets.zero,
               children: [
                 if (isOwner) ...[
-                  ListTile(
-                    leading: const Icon(Icons.dashboard),
-                    title: const Text('Dashboard'),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.dashboard,
+                    title: 'dashboard',
                     onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.ownerDashboard),
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.people),
-                    title: const Text('Driver Management'),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.people,
+                    title: 'Employees',
                     onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.driverManagement),
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.attach_money),
-                    title: const Text('Salary Management'),
-                    onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.ownerSalary),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.assignment,
+                    title: 'submitted',
+                    color: const Color(0xFF3C5A80), // Highlighted color from image
+                    onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.ownerSubmitted), 
                   ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.settings,
+                    title: 'Settings',
+                    onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.settings),
+                  ),
+
                 ],
                 if (isDriver) ...[
-                  ListTile(
-                    leading: const Icon(Icons.dashboard),
-                    title: const Text('Dashboard'),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.dashboard,
+                    title: 'Dashboard',
                     onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.driverDashboard),
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.add_road),
-                    title: const Text('Create Trip'),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.add_road,
+                    title: 'Create Trip',
                     onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.tripForm),
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.account_balance_wallet),
-                    title: const Text('My Salary'),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.account_balance_wallet,
+                    title: 'My Salary',
                     onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.driverSalary),
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.settings,
+                    title: 'Settings',
+                    onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.settings),
                   ),
                 ],
                 const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: const Text('Settings'),
-                  onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.settings),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text('Logout', style: TextStyle(color: Colors.red)),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.logout,
+                  title: 'Logout',
+                  color: Colors.red,
                   onTap: () async {
                     await ref.read(authProvider.notifier).signOut();
                     if (context.mounted) {
@@ -122,6 +114,28 @@ class AppDrawer extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDrawerItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    Color color = Colors.black87,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: color, size: 26),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: color,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      onTap: onTap,
     );
   }
 }

@@ -205,9 +205,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Trip', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+        title: Text('New Trip', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
         backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())

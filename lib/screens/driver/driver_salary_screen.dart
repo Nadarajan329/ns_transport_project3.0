@@ -34,12 +34,9 @@ class _DriverSalaryScreenState extends ConsumerState<DriverSalaryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'My Salary & Advances',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-        ),
+        title: Text('My Salary', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
         backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: const AppDrawer(),
       body: RefreshIndicator(

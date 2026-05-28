@@ -105,9 +105,9 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Trip Details', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+        title: Text('Trip Details', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
         backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           tripState.when(
             data: (trips) {

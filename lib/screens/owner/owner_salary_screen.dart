@@ -115,7 +115,9 @@ class _OwnerSalaryScreenState extends ConsumerState<OwnerSalaryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Salaries & Payments'),
+        title: const Text('Salaries & Payments', style: TextStyle(color: Colors.white, inherit: false)),
+        backgroundColor: const Color(0xFF1565C0),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: const AppDrawer(),
       body: salariesAsync.when(

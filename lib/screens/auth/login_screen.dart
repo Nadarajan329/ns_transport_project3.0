@@ -243,7 +243,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: 'Email',
                     prefixIcon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (val) => val == null || val.isEmpty ? 'Enter your email' : null,
+                    validator: (val) {
+                      if (val == null || val.isEmpty) return 'Enter your email';
+                      if (!val.contains('@')) return 'Please enter a valid email (e.g. name@gmail.com)';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(

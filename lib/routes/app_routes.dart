@@ -11,6 +11,8 @@ import 'package:ns_transport/screens/driver/trip_form_screen.dart';
 import 'package:ns_transport/screens/driver/driver_salary_screen.dart';
 import 'package:ns_transport/screens/shared/trip_detail_screen.dart';
 import 'package:ns_transport/screens/shared/settings_screen.dart';
+import 'package:ns_transport/screens/owner/owner_submitted_screen.dart';
+import 'package:ns_transport/screens/owner/employee_detail_screen.dart';
 
 /// Custom page route that slides from right with a fade effect.
 class SlidePageRoute<T> extends PageRouteBuilder<T> {
@@ -58,7 +60,9 @@ abstract final class AppRoutes {
   static const String ownerSalary = '/owner/salary';
   static const String driverSalary = '/driver/salary';
   static const String ownerTripReview = '/owner/trip-review';
+  static const String ownerSubmitted = '/owner/submitted';
   static const String settings = '/settings';
+  static const String employeeDetail = '/owner/employee-detail';
 
   // ── Route Generator ──────────────────────────────────────────────────
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -122,6 +126,17 @@ abstract final class AppRoutes {
       case AppRoutes.settings:
         return SlidePageRoute(
           page: const SettingsScreen(),
+        );
+
+      case ownerSubmitted:
+        return SlidePageRoute(
+          page: const OwnerSubmittedScreen(),
+        );
+
+      case employeeDetail:
+        final driver = settings.arguments as Map<String, dynamic>;
+        return SlidePageRoute(
+          page: EmployeeDetailScreen(driver: driver),
         );
 
       default:
