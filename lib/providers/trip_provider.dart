@@ -42,6 +42,19 @@ class TripNotifier extends StateNotifier<AsyncValue<List<TripModel>>> {
     }
   }
 
+  Future<void> updateTrip(TripModel trip) async {
+    try {
+      final updatedTrip = await _tripService.updateTrip(trip);
+      if (state.hasValue) {
+        state = AsyncValue.data(
+          state.value!.map((t) => t.id == updatedTrip.id ? updatedTrip : t).toList(),
+        );
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> updateTripStatus(String tripId, String newStatus) async {
     try {
       await _tripService.updateTripStatus(tripId, newStatus);

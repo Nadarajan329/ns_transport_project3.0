@@ -12,6 +12,8 @@ CREATE TABLE public.users (
   role TEXT DEFAULT 'driver' NOT NULL,
   phone TEXT,
   avatar_url TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ns_transport/models/trip_model.dart';
 import 'package:ns_transport/screens/auth/splash_screen.dart';
 import 'package:ns_transport/screens/auth/login_screen.dart';
 import 'package:ns_transport/screens/auth/register_screen.dart';
@@ -6,6 +7,7 @@ import 'package:ns_transport/screens/owner/owner_dashboard.dart';
 import 'package:ns_transport/screens/owner/driver_management_screen.dart';
 import 'package:ns_transport/screens/owner/owner_salary_screen.dart';
 import 'package:ns_transport/screens/owner/owner_trip_review_screen.dart';
+import 'package:ns_transport/screens/owner/driver_locations_screen.dart';
 import 'package:ns_transport/screens/driver/driver_dashboard.dart';
 import 'package:ns_transport/screens/driver/trip_form_screen.dart';
 import 'package:ns_transport/screens/driver/driver_salary_screen.dart';
@@ -13,6 +15,7 @@ import 'package:ns_transport/screens/shared/trip_detail_screen.dart';
 import 'package:ns_transport/screens/shared/settings_screen.dart';
 import 'package:ns_transport/screens/owner/owner_submitted_screen.dart';
 import 'package:ns_transport/screens/owner/employee_detail_screen.dart';
+import 'package:ns_transport/screens/driver/driver_profile_edit_screen.dart';
 
 /// Custom page route that slides from right with a fade effect.
 class SlidePageRoute<T> extends PageRouteBuilder<T> {
@@ -63,6 +66,8 @@ abstract final class AppRoutes {
   static const String ownerSubmitted = '/owner/submitted';
   static const String settings = '/settings';
   static const String employeeDetail = '/owner/employee-detail';
+  static const String driverLocations = '/owner/driver-locations';
+  static const String driverProfileEdit = '/driver/profile-edit';
 
   // ── Route Generator ──────────────────────────────────────────────────
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -93,8 +98,9 @@ abstract final class AppRoutes {
         );
 
       case tripForm:
+        final trip = settings.arguments as TripModel?;
         return SlidePageRoute(
-          page: const TripFormScreen(),
+          page: TripFormScreen(existingTrip: trip),
         );
 
       case tripDetail:
@@ -137,6 +143,16 @@ abstract final class AppRoutes {
         final driver = settings.arguments as Map<String, dynamic>;
         return SlidePageRoute(
           page: EmployeeDetailScreen(driver: driver),
+        );
+
+      case driverLocations:
+        return SlidePageRoute(
+          page: const DriverLocationsScreen(),
+        );
+
+      case driverProfileEdit:
+        return SlidePageRoute(
+          page: const DriverProfileEditScreen(),
         );
 
       default:

@@ -281,8 +281,8 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Customer:', style: GoogleFonts.inter(color: Colors.grey)),
-                Text(trip.customerName, style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                Text('Load Tonnage:', style: GoogleFonts.inter(color: Colors.grey)),
+                Text(trip.loadTonnage, style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
               ],
             ),
           ],
@@ -565,9 +565,10 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
-              // TODO: Navigate to Edit screen (in our case we can support editing on TripFormScreen by passing TripModel)
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Edit draft functionality is triggered.')),
+              Navigator.pushNamed(
+                context,
+                '/driver/trip-form',
+                arguments: trip,
               );
             },
           ),

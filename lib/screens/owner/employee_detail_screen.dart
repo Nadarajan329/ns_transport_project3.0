@@ -30,7 +30,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(salaryProvider.notifier).loadSalaries();
       ref.read(tripProvider.notifier).loadTrips();
@@ -125,14 +125,19 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                 CircleAvatar(
                   radius: 40,
                   backgroundColor: const Color(0xFFBBDEFB),
-                  child: Text(
-                    driverName.isNotEmpty ? driverName[0].toUpperCase() : '?',
-                    style: GoogleFonts.inter(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1976D2),
-                    ),
-                  ),
+                  backgroundImage: widget.driver['avatar_url'] != null && widget.driver['avatar_url'].isNotEmpty
+                      ? NetworkImage(widget.driver['avatar_url'])
+                      : null,
+                  child: widget.driver['avatar_url'] == null || widget.driver['avatar_url'].isEmpty
+                      ? Text(
+                          driverName.isNotEmpty ? driverName[0].toUpperCase() : '?',
+                          style: GoogleFonts.inter(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1976D2),
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 20),
                 Expanded(
@@ -209,6 +214,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
             unselectedLabelColor: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
             indicatorColor: const Color(0xFF1976D2),
             tabs: const [
+              Tab(icon: Icon(Icons.person), text: 'Profile Info'),
               Tab(icon: Icon(Icons.attach_money), text: 'Salary'),
               Tab(icon: Icon(Icons.route), text: 'Trips'),
             ],
@@ -217,6 +223,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
             child: TabBarView(
               controller: _tabController,
               children: [
+                _buildProfileTab(isDark),
                 _buildSalaryTab(isDark),
                 _buildTripsTab(isDark),
               ],
@@ -633,6 +640,165 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, st) => Center(child: Text('Error: $e')),
+    );
+  }
+
+  Widget _buildProfileTab(bool isDark) {
+    final driver = widget.driver;
+
+    final fatherName = driver['father_name'] as String?;
+    final homeAddress = driver['home_address'] as String?;
+    final gender = driver['gender'] as String?;
+    final dobStr = driver['date_of_birth'] as String?;
+    final accNumber = driver['account_number'] as String?;
+    final ifsc = driver['ifsc_code'] as String?;
+    final branch = driver['branch_name'] as String?;
+    final aadharUrl = driver['aadhar_card_url'] as String?;
+    final dlUrl = driver['driving_license_url'] as String?;
+
+    String ageStr = 'Not Provided';
+    if (dobStr != null && dobStr.isNotEmpty) {
+      try {
+        final dob = DateTime.parse(dobStr);
+        final today = DateTime.now();
+        int age = today.year - dob.year;
+        if (today.month < dob.month || (today.month == dob.month && today.day < dob.day)) {
+          age--;
+        }
+        ageStr = '$age years';
+      } catch (e) {
+        // ignore format error
+      }
+    }
+
+    Widget buildSection(String title, List<Widget> children) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? Theme.of(context).cardTheme.color : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...children,
+          ],
+        ),
+      );
+    }
+
+    Widget buildRow(String label, String? value) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(
+                label,
+                style: GoogleFonts.inter(
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                value != null && value.isNotEmpty ? value : 'Not Provided',
+                style: GoogleFonts.inter(
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget buildImageDoc(String title, String? url) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (url != null && url.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                url,
+                height: 150,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 150,
+                    width: double.infinity,
+                    color: isDark ? Colors.white12 : Colors.grey.shade200,
+                    child: const Center(child: Text('Failed to load image')),
+                  );
+                },
+              ),
+            )
+          else
+            Container(
+              height: 100,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white12 : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade300, style: BorderStyle.solid),
+              ),
+              child: const Center(
+                child: Text('Not Provided'),
+              ),
+            ),
+          const SizedBox(height: 16),
+        ],
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          buildSection('Personal Information', [
+            buildRow('Father\'s Name', fatherName),
+            buildRow('Gender', gender),
+            buildRow('Date of Birth', dobStr),
+            buildRow('Age', ageStr),
+            buildRow('Home Address', homeAddress),
+          ]),
+          buildSection('Bank Details', [
+            buildRow('Account Number', accNumber),
+            buildRow('IFSC Code', ifsc),
+            buildRow('Branch Name', branch),
+          ]),
+          buildSection('ID Proofs', [
+            buildImageDoc('Aadhar Card', aadharUrl),
+            buildImageDoc('Driving License', dlUrl),
+          ]),
+        ],
+      ),
     );
   }
 }

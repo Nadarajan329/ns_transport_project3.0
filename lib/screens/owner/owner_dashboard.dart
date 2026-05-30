@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ns_transport/providers/trip_provider.dart';
 import 'package:ns_transport/widgets/app_drawer.dart';
 import 'package:ns_transport/routes/app_routes.dart';
+import 'package:ns_transport/screens/owner/driver_management_screen.dart';
 
 class OwnerDashboard extends ConsumerStatefulWidget {
   const OwnerDashboard({super.key});
@@ -69,7 +70,10 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
   @override
   Widget build(BuildContext context) {
     final tripState = ref.watch(tripProvider);
+    final driversState = ref.watch(driversProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final totalEmployees = driversState.valueOrNull?.length ?? 0;
 
     int totalTrips = 0;
     int pendingReports = 0;
@@ -165,7 +169,7 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
                       children: [
                         _buildStatCard(
                           'Total Employees',
-                          '--',
+                          totalEmployees.toString(),
                           Icons.people,
                           const Color(0xFF3498DB), // Blue
                           isDark, context
@@ -216,9 +220,15 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildActionButton(Icons.person_add, 'Add Driver', isDark, context),
-                        _buildActionButton(Icons.add_road, 'New Route', isDark, context),
-                        _buildActionButton(Icons.receipt_long, 'Reports', isDark, context),
+                        _buildActionButton(Icons.person_add, 'Add Driver', isDark, context,
+                          onTap: () => Navigator.pushNamed(context, AppRoutes.driverManagement),
+                        ),
+                        _buildActionButton(Icons.map, 'Map', isDark, context,
+                          onTap: () => Navigator.pushNamed(context, AppRoutes.driverLocations),
+                        ),
+                        _buildActionButton(Icons.receipt_long, 'Reports', isDark, context,
+                          onTap: () => Navigator.pushNamed(context, AppRoutes.ownerTripReview),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 32),
@@ -229,35 +239,38 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label, bool isDark, BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? Theme.of(context).cardTheme.color : Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              if (!isDark)
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.08),
-                  spreadRadius: 2,
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-            ],
+  Widget _buildActionButton(IconData icon, String label, bool isDark, BuildContext context, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? Theme.of(context).cardTheme.color : Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                if (!isDark)
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.08),
+                    spreadRadius: 2,
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+              ],
+            ),
+            child: Icon(icon, color: isDark ? const Color(0xFF64B5F6) : const Color(0xFF1976D2), size: 28),
           ),
-          child: Icon(icon, color: isDark ? const Color(0xFF64B5F6) : const Color(0xFF1976D2), size: 28),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white70 : const Color(0xFF334E68),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white70 : const Color(0xFF334E68),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

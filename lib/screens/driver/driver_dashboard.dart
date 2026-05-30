@@ -8,6 +8,7 @@ import 'package:ns_transport/widgets/app_drawer.dart';
 import 'package:ns_transport/widgets/empty_state.dart';
 import 'package:ns_transport/widgets/status_badge.dart';
 import 'package:ns_transport/utils/formatters.dart';
+import 'package:ns_transport/services/location_service.dart';
 
 class DriverDashboard extends ConsumerStatefulWidget {
   const DriverDashboard({super.key});
@@ -19,6 +20,7 @@ class DriverDashboard extends ConsumerStatefulWidget {
 class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _searchQuery = '';
+  bool _locationEnabled = false;
 
   @override
   void initState() {
@@ -26,11 +28,23 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
     _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(tripProvider.notifier).loadTrips();
+      _startLocationTracking();
     });
+  }
+
+  Future<void> _startLocationTracking() async {
+    final hasPermission = await LocationService.instance.checkPermission();
+    if (hasPermission) {
+      await LocationService.instance.startTracking(intervalSeconds: 30);
+      if (mounted) setState(() => _locationEnabled = true);
+    } else {
+      if (mounted) setState(() => _locationEnabled = false);
+    }
   }
 
   @override
   void dispose() {
+    LocationService.instance.stopTracking();
     _tabController.dispose();
     super.dispose();
   }
@@ -56,6 +70,39 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
         backgroundColor: primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        actions: [
+          Tooltip(
+            message: _locationEnabled ? 'Live location active' : 'Location off — tap to enable',
+            child: IconButton(
+              icon: Icon(
+                _locationEnabled ? Icons.location_on : Icons.location_off,
+                color: _locationEnabled ? Colors.greenAccent : Colors.white70,
+              ),
+              onPressed: () async {
+                if (!_locationEnabled) {
+                  await _startLocationTracking();
+                  if (mounted && _locationEnabled) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Live location enabled')),
+                    );
+                  } else if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Location permission denied. Please enable it in settings.')),
+                    );
+                  }
+                } else {
+                  LocationService.instance.stopTracking();
+                  setState(() => _locationEnabled = false);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Live location disabled')),
+                    );
+                  }
+                }
+              },
+            ),
+          ),
+        ],
       ),
       drawer: const AppDrawer(),
       body: RefreshIndicator(

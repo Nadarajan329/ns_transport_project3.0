@@ -51,21 +51,15 @@ class AppDrawer extends ConsumerWidget {
                   _buildDrawerItem(
                     context,
                     icon: Icons.people,
-                    title: 'Employees',
+                    title: 'Drivers Profile',
                     onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.driverManagement),
                   ),
 
+
                   _buildDrawerItem(
                     context,
-                    icon: Icons.assignment,
-                    title: 'submitted',
-                    color: const Color(0xFF3C5A80), // Highlighted color from image
-                    onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.ownerSubmitted), 
-                  ),
-                  _buildDrawerItem(
-                    context,
-                    icon: Icons.settings,
-                    title: 'Settings',
+                    icon: Icons.person,
+                    title: 'Profile',
                     onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.settings),
                   ),
 
@@ -91,8 +85,8 @@ class AppDrawer extends ConsumerWidget {
                   ),
                   _buildDrawerItem(
                     context,
-                    icon: Icons.settings,
-                    title: 'Settings',
+                    icon: Icons.person,
+                    title: 'Profile',
                     onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.settings),
                   ),
                 ],

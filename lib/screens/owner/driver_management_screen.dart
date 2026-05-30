@@ -100,14 +100,19 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
                           leading: CircleAvatar(
                             backgroundColor: const Color(0xFF42A5F5),
                             radius: 24,
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : '?',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20,
-                              ),
-                            ),
+                            backgroundImage: driver['avatar_url'] != null && driver['avatar_url'].isNotEmpty
+                                ? NetworkImage(driver['avatar_url'])
+                                : null,
+                            child: driver['avatar_url'] == null || driver['avatar_url'].isEmpty
+                                ? Text(
+                                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                    ),
+                                  )
+                                : null,
                           ),
                           title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                           subtitle: Padding(

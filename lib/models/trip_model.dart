@@ -6,7 +6,7 @@ class TripModel {
   final String fromLocation;
   final String toLocation;
   final String? loadType;
-  final String customerName;
+  final String loadTonnage;
   final double rentAmount;
   final double fuelExpense;
   final double tollExpense;
@@ -33,7 +33,7 @@ class TripModel {
     required this.fromLocation,
     required this.toLocation,
     this.loadType,
-    required this.customerName,
+    required this.loadTonnage,
     required this.rentAmount,
     required this.fuelExpense,
     required this.tollExpense,
@@ -62,7 +62,7 @@ class TripModel {
       fromLocation: json['from_location'] as String,
       toLocation: json['to_location'] as String,
       loadType: json['load_type'] as String?,
-      customerName: json['customer_name'] as String,
+      loadTonnage: json['load_tonnage'] as String? ?? '',
       rentAmount: (json['rent_amount'] as num).toDouble(),
       fuelExpense: (json['fuel_expense'] as num).toDouble(),
       tollExpense: (json['toll_expense'] as num).toDouble(),
@@ -92,7 +92,7 @@ class TripModel {
       'from_location': fromLocation,
       'to_location': toLocation,
       if (loadType != null) 'load_type': loadType,
-      'customer_name': customerName,
+      'load_tonnage': loadTonnage,
       'rent_amount': rentAmount,
       'fuel_expense': fuelExpense,
       'toll_expense': tollExpense,
@@ -121,7 +121,7 @@ class TripModel {
     String? fromLocation,
     String? toLocation,
     String? loadType,
-    String? customerName,
+    String? loadTonnage,
     double? rentAmount,
     double? fuelExpense,
     double? tollExpense,
@@ -148,7 +148,7 @@ class TripModel {
       fromLocation: fromLocation ?? this.fromLocation,
       toLocation: toLocation ?? this.toLocation,
       loadType: loadType ?? this.loadType,
-      customerName: customerName ?? this.customerName,
+      loadTonnage: loadTonnage ?? this.loadTonnage,
       rentAmount: rentAmount ?? this.rentAmount,
       fuelExpense: fuelExpense ?? this.fuelExpense,
       tollExpense: tollExpense ?? this.tollExpense,

@@ -69,8 +69,8 @@ class PdfService {
                       pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('${trip.fromLocation} to ${trip.toLocation}')),
                     ]),
                     pw.TableRow(children: [
-                      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('Customer')),
-                      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(trip.customerName)),
+                      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('Load Tonnage')),
+                      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(trip.loadTonnage)),
                     ]),
                     pw.TableRow(children: [
                       pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('Status')),

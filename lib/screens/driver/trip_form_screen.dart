@@ -9,9 +9,11 @@ import 'package:ns_transport/models/trip_model.dart';
 import 'package:ns_transport/providers/auth_provider.dart';
 import 'package:ns_transport/providers/trip_provider.dart';
 import 'package:ns_transport/widgets/custom_text_field.dart';
+import 'package:ns_transport/utils/formatters.dart';
 
 class TripFormScreen extends ConsumerStatefulWidget {
-  const TripFormScreen({super.key});
+  final TripModel? existingTrip;
+  const TripFormScreen({super.key, this.existingTrip});
 
   @override
   ConsumerState<TripFormScreen> createState() => _TripFormScreenState();
@@ -25,7 +27,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   final _fromLocationController = TextEditingController();
   final _toLocationController = TextEditingController();
   final _loadTypeController = TextEditingController();
-  final _customerNameController = TextEditingController();
+  final _loadTonnageController = TextEditingController();
   
   final _rentAmountController = TextEditingController();
   final _fuelExpenseController = TextEditingController();
@@ -39,6 +41,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   DateTime _selectedDate = DateTime.now();
   XFile? _billImage;
   XFile? _receiptImage;
+  String? _existingBillUrl;
+  String? _existingReceiptUrl;
   bool _isLoading = false;
 
   final ImagePicker _picker = ImagePicker();
@@ -46,7 +50,27 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   @override
   void initState() {
     super.initState();
-    _dateController.text = "${_selectedDate.toLocal()}".split(' ')[0];
+    
+    if (widget.existingTrip != null) {
+      final trip = widget.existingTrip!;
+      _selectedDate = trip.tripDate;
+      _vehicleNumberController.text = trip.vehicleNumber;
+      _fromLocationController.text = trip.fromLocation;
+      _toLocationController.text = trip.toLocation;
+      _loadTypeController.text = trip.loadType ?? '';
+      _loadTonnageController.text = trip.loadTonnage;
+      _rentAmountController.text = trip.rentAmount > 0 ? trip.rentAmount.toString() : '';
+      _fuelExpenseController.text = trip.fuelExpense > 0 ? trip.fuelExpense.toString() : '';
+      _tollExpenseController.text = trip.tollExpense > 0 ? trip.tollExpense.toString() : '';
+      _foodExpenseController.text = trip.foodExpense > 0 ? trip.foodExpense.toString() : '';
+      _otherExpenseController.text = trip.otherExpense > 0 ? trip.otherExpense.toString() : '';
+      _advanceAmountController.text = trip.advanceAmount > 0 ? trip.advanceAmount.toString() : '';
+      _notesController.text = trip.notes ?? '';
+      _existingBillUrl = trip.billImage;
+      _existingReceiptUrl = trip.receiptImage;
+    }
+    
+    _dateController.text = Formatters.formatDate(_selectedDate, format: 'dd-MM-yyyy');
   }
 
   @override
@@ -56,7 +80,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     _fromLocationController.dispose();
     _toLocationController.dispose();
     _loadTypeController.dispose();
-    _customerNameController.dispose();
+    _loadTonnageController.dispose();
     _rentAmountController.dispose();
     _fuelExpenseController.dispose();
     _tollExpenseController.dispose();
@@ -77,7 +101,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _dateController.text = "${_selectedDate.toLocal()}".split(' ')[0];
+        _dateController.text = Formatters.formatDate(_selectedDate, format: 'dd-MM-yyyy');
       });
     }
   }
@@ -111,8 +135,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         return;
       }
 
-      String? billUrl;
-      String? receiptUrl;
+      String? billUrl = _existingBillUrl;
+      String? receiptUrl = _existingReceiptUrl;
 
       if (_billImage != null) {
         billUrl = await ref.read(tripServiceProvider).uploadImage(_billImage!, 'bills');
@@ -121,14 +145,17 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         receiptUrl = await ref.read(tripServiceProvider).uploadImage(_receiptImage!, 'receipts');
       }
 
+      final isEditing = widget.existingTrip != null;
+
       final trip = TripModel(
+        id: isEditing ? widget.existingTrip!.id : null,
         driverId: user.id,
         vehicleNumber: _vehicleNumberController.text,
         tripDate: _selectedDate,
         fromLocation: _fromLocationController.text,
         toLocation: _toLocationController.text,
         loadType: _loadTypeController.text.isEmpty ? null : _loadTypeController.text,
-        customerName: _customerNameController.text,
+        loadTonnage: _loadTonnageController.text,
         rentAmount: double.tryParse(_rentAmountController.text) ?? 0.0,
         fuelExpense: double.tryParse(_fuelExpenseController.text) ?? 0.0,
         tollExpense: double.tryParse(_tollExpenseController.text) ?? 0.0,
@@ -139,15 +166,25 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         status: status,
         billImage: billUrl,
         receiptImage: receiptUrl,
+        createdAt: isEditing ? widget.existingTrip!.createdAt : null,
+        ownerComment: isEditing ? widget.existingTrip!.ownerComment : null,
       );
 
-      await ref.read(tripProvider.notifier).addTrip(trip);
+      if (isEditing) {
+        await ref.read(tripProvider.notifier).updateTrip(trip);
+      } else {
+        await ref.read(tripProvider.notifier).addTrip(trip);
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(status == 'draft' ? 'Draft saved' : 'Trip submitted successfully')),
         );
         Navigator.pop(context);
+        if (isEditing) {
+          // If edited from trip details, pop that screen too
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -164,7 +201,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     }
   }
 
-  Widget _buildImagePicker(String title, XFile? image, bool isBill) {
+  Widget _buildImagePicker(String title, XFile? image, String? existingUrl, bool isBill) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -185,14 +222,19 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                     borderRadius: BorderRadius.circular(12),
                     child: kIsWeb ? Image.network(image.path, fit: BoxFit.cover) : Image.file(File(image.path), fit: BoxFit.cover),
                   )
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_photo_alternate, size: 40, color: Colors.grey.shade400),
-                      const SizedBox(height: 8),
-                      Text('Tap to select image', style: GoogleFonts.inter(color: Colors.grey.shade500)),
-                    ],
-                  ),
+                : (existingUrl != null && existingUrl.isNotEmpty)
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(existingUrl, fit: BoxFit.cover),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_photo_alternate, size: 40, color: Colors.grey.shade400),
+                          const SizedBox(height: 8),
+                          Text('Tap to select image', style: GoogleFonts.inter(color: Colors.grey.shade500)),
+                        ],
+                      ),
           ),
         ),
       ],
@@ -205,7 +247,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Trip', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+        title: Text(widget.existingTrip != null ? 'Edit Report' : 'New Trip', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
         backgroundColor: primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -255,8 +297,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
-                    controller: _customerNameController,
-                    label: 'Customer Name',
+                    controller: _loadTonnageController,
+                    label: 'Load Tonnage',
                     validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
                   
@@ -308,9 +350,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                   const SizedBox(height: 32),
                   Text('Attachments & Notes', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor)),
                   const SizedBox(height: 16),
-                  _buildImagePicker('Bill Image', _billImage, true),
+                  _buildImagePicker('Bill Image', _billImage, _existingBillUrl, true),
                   const SizedBox(height: 16),
-                  _buildImagePicker('Fuel Receipt', _receiptImage, false),
+                  _buildImagePicker('Fuel Receipt', _receiptImage, _existingReceiptUrl, false),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _notesController,
