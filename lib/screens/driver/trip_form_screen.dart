@@ -10,6 +10,9 @@ import 'package:ns_transport/providers/auth_provider.dart';
 import 'package:ns_transport/providers/trip_provider.dart';
 import 'package:ns_transport/widgets/custom_text_field.dart';
 import 'package:ns_transport/utils/formatters.dart';
+import 'package:ns_transport/providers/locale_provider.dart';
+import 'package:ns_transport/core/localization/app_translations.dart';
+import 'package:ns_transport/core/theme/app_theme.dart';
 
 class TripFormScreen extends ConsumerStatefulWidget {
   final TripModel? existingTrip;
@@ -30,19 +33,17 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   final _loadTonnageController = TextEditingController();
   
   final _rentAmountController = TextEditingController();
-  final _fuelExpenseController = TextEditingController();
-  final _tollExpenseController = TextEditingController();
-  final _foodExpenseController = TextEditingController();
-  final _otherExpenseController = TextEditingController();
-  final _advanceAmountController = TextEditingController();
+  final _loadingExpenseController = TextEditingController();
+  final _unloadingExpenseController = TextEditingController();
+  List<Map<String, TextEditingController>> _otherExpenses = [];
   
   final _notesController = TextEditingController();
   
   DateTime _selectedDate = DateTime.now();
-  XFile? _billImage;
-  XFile? _receiptImage;
-  String? _existingBillUrl;
-  String? _existingReceiptUrl;
+  List<XFile> _billImages = [];
+  List<XFile> _receiptImages = [];
+  List<String> _existingBillUrls = [];
+  List<String> _existingReceiptUrls = [];
   bool _isLoading = false;
 
   final ImagePicker _picker = ImagePicker();
@@ -60,14 +61,20 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
       _loadTypeController.text = trip.loadType ?? '';
       _loadTonnageController.text = trip.loadTonnage;
       _rentAmountController.text = trip.rentAmount > 0 ? trip.rentAmount.toString() : '';
-      _fuelExpenseController.text = trip.fuelExpense > 0 ? trip.fuelExpense.toString() : '';
-      _tollExpenseController.text = trip.tollExpense > 0 ? trip.tollExpense.toString() : '';
-      _foodExpenseController.text = trip.foodExpense > 0 ? trip.foodExpense.toString() : '';
-      _otherExpenseController.text = trip.otherExpense > 0 ? trip.otherExpense.toString() : '';
-      _advanceAmountController.text = trip.advanceAmount > 0 ? trip.advanceAmount.toString() : '';
+      _loadingExpenseController.text = trip.loadingExpense > 0 ? trip.loadingExpense.toString() : '';
+      _unloadingExpenseController.text = trip.unloadingExpense > 0 ? trip.unloadingExpense.toString() : '';
+      
+      if (trip.otherExpenseDetails != null) {
+        for (var detail in trip.otherExpenseDetails!) {
+          _otherExpenses.add({
+            'description': TextEditingController(text: detail['description'] ?? ''),
+            'amount': TextEditingController(text: detail['amount']?.toString() ?? ''),
+          });
+        }
+      }
       _notesController.text = trip.notes ?? '';
-      _existingBillUrl = trip.billImage;
-      _existingReceiptUrl = trip.receiptImage;
+      _existingBillUrls = trip.billImages ?? [];
+      _existingReceiptUrls = trip.receiptImages ?? [];
     }
     
     _dateController.text = Formatters.formatDate(_selectedDate, format: 'dd-MM-yyyy');
@@ -82,11 +89,12 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     _loadTypeController.dispose();
     _loadTonnageController.dispose();
     _rentAmountController.dispose();
-    _fuelExpenseController.dispose();
-    _tollExpenseController.dispose();
-    _foodExpenseController.dispose();
-    _otherExpenseController.dispose();
-    _advanceAmountController.dispose();
+    _loadingExpenseController.dispose();
+    _unloadingExpenseController.dispose();
+    for (var expense in _otherExpenses) {
+      expense['description']?.dispose();
+      expense['amount']?.dispose();
+    }
     _notesController.dispose();
     super.dispose();
   }
@@ -107,13 +115,13 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   }
 
   Future<void> _pickImage(bool isBill) async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
+    final List<XFile> images = await _picker.pickMultiImage();
+    if (images.isNotEmpty) {
       setState(() {
         if (isBill) {
-          _billImage = image;
+          _billImages.addAll(images);
         } else {
-          _receiptImage = image;
+          _receiptImages.addAll(images);
         }
       });
     }
@@ -130,19 +138,37 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
       final user = ref.read(authProvider).value;
       if (user == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not authenticated')),
+          SnackBar(content: Text(AppTranslations.get('user_not_authenticated', ref.read(localeProvider)))),
         );
         return;
       }
 
-      String? billUrl = _existingBillUrl;
-      String? receiptUrl = _existingReceiptUrl;
+      List<String> finalBillUrls = List.from(_existingBillUrls);
+      List<String> finalReceiptUrls = List.from(_existingReceiptUrls);
 
-      if (_billImage != null) {
-        billUrl = await ref.read(tripServiceProvider).uploadImage(_billImage!, 'bills');
+      for (var img in _billImages) {
+        String url = await ref.read(tripServiceProvider).uploadImage(img, 'bills');
+        finalBillUrls.add(url);
       }
-      if (_receiptImage != null) {
-        receiptUrl = await ref.read(tripServiceProvider).uploadImage(_receiptImage!, 'receipts');
+      
+      for (var img in _receiptImages) {
+        String url = await ref.read(tripServiceProvider).uploadImage(img, 'receipts');
+        finalReceiptUrls.add(url);
+      }
+
+      double otherExpenseSum = 0;
+      List<Map<String, dynamic>> otherExpenseDetailsList = [];
+      for (var expense in _otherExpenses) {
+        final amountText = expense['amount']!.text;
+        final descText = expense['description']!.text;
+        if (amountText.isNotEmpty) {
+          final amt = double.tryParse(amountText) ?? 0.0;
+          otherExpenseSum += amt;
+          otherExpenseDetailsList.add({
+            'description': descText,
+            'amount': amt,
+          });
+        }
       }
 
       final isEditing = widget.existingTrip != null;
@@ -157,15 +183,15 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         loadType: _loadTypeController.text.isEmpty ? null : _loadTypeController.text,
         loadTonnage: _loadTonnageController.text,
         rentAmount: double.tryParse(_rentAmountController.text) ?? 0.0,
-        fuelExpense: double.tryParse(_fuelExpenseController.text) ?? 0.0,
-        tollExpense: double.tryParse(_tollExpenseController.text) ?? 0.0,
-        foodExpense: double.tryParse(_foodExpenseController.text) ?? 0.0,
-        otherExpense: double.tryParse(_otherExpenseController.text) ?? 0.0,
-        advanceAmount: double.tryParse(_advanceAmountController.text) ?? 0.0,
+        loadingExpense: double.tryParse(_loadingExpenseController.text) ?? 0.0,
+        unloadingExpense: double.tryParse(_unloadingExpenseController.text) ?? 0.0,
+        otherExpense: otherExpenseSum,
+        otherExpenseDetails: otherExpenseDetailsList.isEmpty ? null : otherExpenseDetailsList,
+        advanceAmount: 0.0,
         notes: _notesController.text.isEmpty ? null : _notesController.text,
         status: status,
-        billImage: billUrl,
-        receiptImage: receiptUrl,
+        billImages: finalBillUrls.isEmpty ? null : finalBillUrls,
+        receiptImages: finalReceiptUrls.isEmpty ? null : finalReceiptUrls,
         createdAt: isEditing ? widget.existingTrip!.createdAt : null,
         ownerComment: isEditing ? widget.existingTrip!.ownerComment : null,
       );
@@ -178,7 +204,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(status == 'draft' ? 'Draft saved' : 'Trip submitted successfully')),
+          SnackBar(content: Text(status == 'draft' ? AppTranslations.get('draft_saved', ref.read(localeProvider)) : AppTranslations.get('trip_submitted', ref.read(localeProvider)))),
         );
         Navigator.pop(context);
         if (isEditing) {
@@ -189,7 +215,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save trip: $e')),
+          SnackBar(content: Text('${AppTranslations.get('failed_save_trip', ref.read(localeProvider))}: $e')),
         );
       }
     } finally {
@@ -201,42 +227,185 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     }
   }
 
-  Widget _buildImagePicker(String title, XFile? image, String? existingUrl, bool isBill) {
+  Widget _buildMultiImagePicker(String title, List<XFile> images, List<String> existingUrls, bool isBill) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () => _pickImage(isBill),
-          child: Container(
-            height: 120,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              border: Border.all(color: Colors.grey.shade300, width: 1.5),
-              borderRadius: BorderRadius.circular(12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
             ),
-            child: image != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: kIsWeb ? Image.network(image.path, fit: BoxFit.cover) : Image.file(File(image.path), fit: BoxFit.cover),
-                  )
-                : (existingUrl != null && existingUrl.isNotEmpty)
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(existingUrl, fit: BoxFit.cover),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add_photo_alternate, size: 40, color: Colors.grey.shade400),
-                          const SizedBox(height: 8),
-                          Text('Tap to select image', style: GoogleFonts.inter(color: Colors.grey.shade500)),
-                        ],
-                      ),
-          ),
+            TextButton.icon(
+              onPressed: () => _pickImage(isBill),
+              icon: const Icon(Icons.add_photo_alternate, size: 18),
+              label: Text(AppTranslations.get('add_images', ref.read(localeProvider)), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            ),
+          ],
         ),
+        const SizedBox(height: 8),
+        if (images.isEmpty && existingUrls.isEmpty)
+          InkWell(
+            onTap: () => _pickImage(isBill),
+            child: Container(
+              height: 120,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_photo_alternate, size: 40, color: Colors.grey.shade400),
+                  const SizedBox(height: 8),
+                  Text(AppTranslations.get('tap_select_images', ref.read(localeProvider)), style: GoogleFonts.inter(color: Colors.grey.shade500)),
+                ],
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 120,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                ...existingUrls.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  String url = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(url, height: 120, width: 120, fit: BoxFit.cover),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (isBill) {
+                                  _existingBillUrls.removeAt(index);
+                                } else {
+                                  _existingReceiptUrls.removeAt(index);
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              child: const Icon(Icons.close, color: Colors.white, size: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                ...images.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  XFile img = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: kIsWeb 
+                              ? Image.network(img.path, height: 120, width: 120, fit: BoxFit.cover) 
+                              : Image.file(File(img.path), height: 120, width: 120, fit: BoxFit.cover),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (isBill) {
+                                  _billImages.removeAt(index);
+                                } else {
+                                  _receiptImages.removeAt(index);
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              child: const Icon(Icons.close, color: Colors.white, size: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildOtherExpensesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ..._otherExpenses.asMap().entries.map((entry) {
+          int index = entry.key;
+          var expense = entry.value;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: CustomTextField(
+                    controller: expense['description']!,
+                    label: AppTranslations.get('description_optional', ref.read(localeProvider)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: CustomTextField(
+                    controller: expense['amount']!,
+                    label: AppTranslations.get('amount', ref.read(localeProvider)),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.remove_circle, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      _otherExpenses[index]['description']?.dispose();
+                      _otherExpenses[index]['amount']?.dispose();
+                      _otherExpenses.removeAt(index);
+                    });
+                  },
+                ),
+              ],
+            ),
+          );
+        }),
+        if (_otherExpenses.length < 15)
+          TextButton.icon(
+            onPressed: () {
+              setState(() {
+                _otherExpenses.add({
+                  'description': TextEditingController(),
+                  'amount': TextEditingController(),
+                });
+              });
+            },
+            icon: const Icon(Icons.add_circle, color: Color(0xFF1565C0)),
+            label: Text(AppTranslations.get('add_other_expense', ref.read(localeProvider)), style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF1565C0))),
+          ),
       ],
     );
   }
@@ -244,10 +413,11 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xFF1565C0);
+    final locale = ref.watch(localeProvider);
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.existingTrip != null ? 'Edit Report' : 'New Trip', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+        title: Text(widget.existingTrip != null ? AppTranslations.get('edit_report', locale) : AppTranslations.get('new_trip', locale), style: AppTheme.getFont(locale, fontWeight: FontWeight.w600, color: Colors.white)),
         backgroundColor: primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -260,12 +430,12 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('General Details', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor)),
+                  Text(AppTranslations.get('general_details', locale), style: AppTheme.getFont(locale, fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor)),
                   const SizedBox(height: 16),
                   CustomTextField(
                     controller: _vehicleNumberController,
-                    label: 'Vehicle Number',
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    label: AppTranslations.get('vehicle_number', locale),
+                    validator: (v) => v == null || v.isEmpty ? AppTranslations.get('required', locale) : null,
                   ),
                   const SizedBox(height: 16),
                   InkWell(
@@ -273,7 +443,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                     child: IgnorePointer(
                       child: CustomTextField(
                         controller: _dateController,
-                        label: 'Date',
+                        label: AppTranslations.get('date', locale),
                         prefixIcon: Icons.calendar_today,
                       ),
                     ),
@@ -281,89 +451,72 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                   const SizedBox(height: 16),
                   CustomTextField(
                     controller: _fromLocationController,
-                    label: 'From Location',
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    label: AppTranslations.get('from_location', locale),
+                    validator: (v) => v == null || v.isEmpty ? AppTranslations.get('required', locale) : null,
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
                     controller: _toLocationController,
-                    label: 'To Location',
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    label: AppTranslations.get('to_location', locale),
+                    validator: (v) => v == null || v.isEmpty ? AppTranslations.get('required', locale) : null,
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
                     controller: _loadTypeController,
-                    label: 'Load Type (Optional)',
+                    label: AppTranslations.get('load_type_optional', locale),
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
                     controller: _loadTonnageController,
-                    label: 'Load Tonnage',
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    label: AppTranslations.get('load_tonnage', locale),
+                    validator: (v) => v == null || v.isEmpty ? AppTranslations.get('required', locale) : null,
                   ),
-                  
-                  const SizedBox(height: 32),
-                  Text('Financial Details', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor)),
                   const SizedBox(height: 16),
                   CustomTextField(
                     controller: _rentAmountController,
-                    label: 'Rent Amount',
+                    label: AppTranslations.get('rent_amount', locale),
                     keyboardType: TextInputType.number,
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    validator: (v) => v == null || v.isEmpty ? AppTranslations.get('required', locale) : null,
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  Text(AppTranslations.get('trip_expenses', locale), style: AppTheme.getFont(locale, fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor)),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _loadingExpenseController,
+                    label: AppTranslations.get('loading_expense', locale),
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v == null || v.isEmpty ? AppTranslations.get('required', locale) : null,
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
-                    controller: _advanceAmountController,
-                    label: 'Advance Amount',
+                    controller: _unloadingExpenseController,
+                    label: AppTranslations.get('unloading_expense', locale),
                     keyboardType: TextInputType.number,
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    validator: (v) => v == null || v.isEmpty ? AppTranslations.get('required', locale) : null,
                   ),
                   const SizedBox(height: 16),
-                  CustomTextField(
-                    controller: _fuelExpenseController,
-                    label: 'Fuel Expense',
-                    keyboardType: TextInputType.number,
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  CustomTextField(
-                    controller: _tollExpenseController,
-                    label: 'Toll Expense',
-                    keyboardType: TextInputType.number,
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  CustomTextField(
-                    controller: _foodExpenseController,
-                    label: 'Food Expense',
-                    keyboardType: TextInputType.number,
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  CustomTextField(
-                    controller: _otherExpenseController,
-                    label: 'Other Expense',
-                    keyboardType: TextInputType.number,
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                  ),
+                  Text(AppTranslations.get('other_expenses_opt', locale), style: AppTheme.getFont(locale, fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+                  const SizedBox(height: 8),
+                  _buildOtherExpensesSection(),
 
                   const SizedBox(height: 32),
-                  Text('Attachments & Notes', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor)),
+                  Text(AppTranslations.get('attachments_notes', locale), style: AppTheme.getFont(locale, fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor)),
                   const SizedBox(height: 16),
-                  _buildImagePicker('Bill Image', _billImage, _existingBillUrl, true),
+                  _buildMultiImagePicker(AppTranslations.get('bill_images', locale), _billImages, _existingBillUrls, true),
                   const SizedBox(height: 16),
-                  _buildImagePicker('Fuel Receipt', _receiptImage, _existingReceiptUrl, false),
+                  _buildMultiImagePicker(AppTranslations.get('fuel_receipts', locale), _receiptImages, _existingReceiptUrls, false),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _notesController,
                     maxLines: 4,
-                    style: GoogleFonts.inter(
+                    style: AppTheme.getFont(locale,
                       fontSize: 16,
                       color: Colors.black87,
                     ),
                     decoration: InputDecoration(
-                      labelText: 'Notes',
-                      labelStyle: GoogleFonts.inter(color: Colors.grey.shade700),
+                      labelText: AppTranslations.get('notes', locale),
+                      labelStyle: AppTheme.getFont(locale, color: Colors.grey.shade700),
                       alignLabelWithHint: true,
                       filled: true,
                       fillColor: Colors.grey.shade50,
@@ -394,7 +547,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                             side: BorderSide(color: primaryColor, width: 2),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: Text('Save as Draft', style: GoogleFonts.inter(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                          child: Text(AppTranslations.get('save_as_draft', locale), style: AppTheme.getFont(locale, color: primaryColor, fontWeight: FontWeight.bold, fontSize: 16)),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -407,7 +560,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: Text('Submit Report', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
+                          child: Text(AppTranslations.get('submit_report', locale), style: AppTheme.getFont(locale, fontWeight: FontWeight.bold, fontSize: 16)),
                         ),
                       ),
                     ],

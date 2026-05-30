@@ -17,37 +17,7 @@ import 'package:ns_transport/screens/owner/owner_submitted_screen.dart';
 import 'package:ns_transport/screens/owner/employee_detail_screen.dart';
 import 'package:ns_transport/screens/driver/driver_profile_edit_screen.dart';
 
-/// Custom page route that slides from right with a fade effect.
-class SlidePageRoute<T> extends PageRouteBuilder<T> {
-  final Widget page;
 
-  SlidePageRoute({required this.page})
-      : super(
-          pageBuilder: (context, animation, secondaryAnimation) => page,
-          transitionDuration: const Duration(milliseconds: 300),
-          reverseTransitionDuration: const Duration(milliseconds: 250),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(1.0, 0.0);
-            const end = Offset.zero;
-            const curve = Curves.easeInOut;
-
-            final slideTween = Tween(begin: begin, end: end).chain(
-              CurveTween(curve: curve),
-            );
-            final fadeTween = Tween<double>(begin: 0.5, end: 1.0).chain(
-              CurveTween(curve: curve),
-            );
-
-            return SlideTransition(
-              position: animation.drive(slideTween),
-              child: FadeTransition(
-                opacity: animation.drive(fadeTween),
-                child: child,
-              ),
-            );
-          },
-        );
-}
 
 /// Application route names and route generation.
 abstract final class AppRoutes {
@@ -73,90 +43,90 @@ abstract final class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case splash:
-        return SlidePageRoute(
-          page: const SplashScreen(),
+        return MaterialPageRoute(
+          builder: (_) => const SplashScreen(),
         );
 
       case login:
-        return SlidePageRoute(
-          page: const LoginScreen(),
+        return MaterialPageRoute(
+          builder: (_) => const LoginScreen(),
         );
 
       case register:
-        return SlidePageRoute(
-          page: const RegisterScreen(),
+        return MaterialPageRoute(
+          builder: (_) => const RegisterScreen(),
         );
 
       case ownerDashboard:
-        return SlidePageRoute(
-          page: const OwnerDashboard(),
+        return MaterialPageRoute(
+          builder: (_) => const OwnerDashboard(),
         );
 
       case driverDashboard:
-        return SlidePageRoute(
-          page: const DriverDashboard(),
+        return MaterialPageRoute(
+          builder: (_) => const DriverDashboard(),
         );
 
       case tripForm:
         final trip = settings.arguments as TripModel?;
-        return SlidePageRoute(
-          page: TripFormScreen(existingTrip: trip),
+        return MaterialPageRoute(
+          builder: (_) => TripFormScreen(existingTrip: trip),
         );
 
       case tripDetail:
         final tripId = settings.arguments as String;
-        return SlidePageRoute(
-          page: TripDetailScreen(tripId: tripId),
+        return MaterialPageRoute(
+          builder: (_) => TripDetailScreen(tripId: tripId),
         );
 
       case driverManagement:
-        return SlidePageRoute(
-          page: const DriverManagementScreen(),
+        return MaterialPageRoute(
+          builder: (_) => const DriverManagementScreen(),
         );
 
       case ownerSalary:
-        return SlidePageRoute(
-          page: const OwnerSalaryScreen(),
+        return MaterialPageRoute(
+          builder: (_) => const OwnerSalaryScreen(),
         );
 
       case driverSalary:
-        return SlidePageRoute(
-          page: const DriverSalaryScreen(),
+        return MaterialPageRoute(
+          builder: (_) => const DriverSalaryScreen(),
         );
 
       case ownerTripReview:
-        return SlidePageRoute(
-          page: const OwnerTripReviewScreen(),
+        return MaterialPageRoute(
+          builder: (_) => const OwnerTripReviewScreen(),
         );
 
       case AppRoutes.settings:
-        return SlidePageRoute(
-          page: const SettingsScreen(),
+        return MaterialPageRoute(
+          builder: (_) => const SettingsScreen(),
         );
 
       case ownerSubmitted:
-        return SlidePageRoute(
-          page: const OwnerSubmittedScreen(),
+        return MaterialPageRoute(
+          builder: (_) => const OwnerSubmittedScreen(),
         );
 
       case employeeDetail:
         final driver = settings.arguments as Map<String, dynamic>;
-        return SlidePageRoute(
-          page: EmployeeDetailScreen(driver: driver),
+        return MaterialPageRoute(
+          builder: (_) => EmployeeDetailScreen(driver: driver),
         );
 
       case driverLocations:
-        return SlidePageRoute(
-          page: const DriverLocationsScreen(),
+        return MaterialPageRoute(
+          builder: (_) => const DriverLocationsScreen(),
         );
 
       case driverProfileEdit:
-        return SlidePageRoute(
-          page: const DriverProfileEditScreen(),
+        return MaterialPageRoute(
+          builder: (_) => const DriverProfileEditScreen(),
         );
 
       default:
-        return SlidePageRoute(page: const _NotFoundScreen());
+        return MaterialPageRoute(builder: (_) => const _NotFoundScreen());
     }
   }
 }

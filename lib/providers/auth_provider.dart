@@ -32,7 +32,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     state = const AsyncValue.loading();
     try {
       await _authService.signIn(email: email, password: password);
-      // State will be updated by onAuthStateChange listener
+      final user = await _authService.getCurrentUser();
+      state = AsyncValue.data(user);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;
@@ -43,7 +44,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     state = const AsyncValue.loading();
     try {
       await _authService.signUp(email: email, password: password, userModel: userModel);
-      // State will be updated by onAuthStateChange listener
+      final user = await _authService.getCurrentUser();
+      state = AsyncValue.data(user);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;
@@ -54,7 +56,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     state = const AsyncValue.loading();
     try {
       await _authService.signInWithGoogle();
-      // State will be updated by onAuthStateChange listener
+      final user = await _authService.getCurrentUser();
+      state = AsyncValue.data(user);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;
@@ -65,7 +68,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     state = const AsyncValue.loading();
     try {
       await _authService.signOut();
-      // State will be updated by onAuthStateChange listener
+      state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;

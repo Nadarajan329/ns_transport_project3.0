@@ -1,6 +1,12 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:ns_transport/widgets/gradient_text.dart';
 import 'package:ns_transport/providers/trip_provider.dart';
+import 'package:ns_transport/providers/locale_provider.dart';
+import 'package:ns_transport/core/localization/app_translations.dart';
+import 'package:ns_transport/core/theme/app_theme.dart';
 import 'package:ns_transport/widgets/app_drawer.dart';
 import 'package:ns_transport/routes/app_routes.dart';
 import 'package:ns_transport/screens/owner/driver_management_screen.dart';
@@ -25,19 +31,60 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
     await ref.read(tripProvider.notifier).loadTrips();
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color iconColor, bool isDark, BuildContext context) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color iconColor, bool isDark, BuildContext context, String locale) {
+    if (isDark) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.1),
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: Theme.of(context).colorScheme.primary, size: 32),
+                const Spacer(),
+                isDark
+                  ? GradientText(
+                      value,
+                      gradient: const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF2979FF)]),
+                      style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold),
+                    )
+                  : Text(
+                      value,
+                      style: AppTheme.getFont(locale, fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: AppTheme.getFont(locale, fontSize: 14, color: Colors.grey.shade400),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? Theme.of(context).cardTheme.color : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          if (!isDark)
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.05),
-              spreadRadius: 2,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.05),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       padding: const EdgeInsets.all(16),
@@ -48,19 +95,12 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
           const Spacer(),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
+            style: AppTheme.getFont(locale, fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 14,
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-            ),
+            style: AppTheme.getFont(locale, fontSize: 14, color: Colors.grey.shade600),
           ),
         ],
       ),
@@ -72,6 +112,7 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
     final tripState = ref.watch(tripProvider);
     final driversState = ref.watch(driversProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final locale = ref.watch(localeProvider);
 
     final totalEmployees = driversState.valueOrNull?.length ?? 0;
 
@@ -92,9 +133,9 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
     return Scaffold(
       backgroundColor: isDark ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text(
-          'Owner Dashboard',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, letterSpacing: 0.5, color: Colors.white, inherit: false),
+        title: Text(
+          AppTranslations.get('owner_dashboard', locale),
+          style: AppTheme.getFont(locale, fontWeight: FontWeight.bold, fontSize: 20, letterSpacing: 0.5, color: Colors.white),
         ),
         backgroundColor: isDark ? Theme.of(context).appBarTheme.backgroundColor : const Color(0xFF1976D2),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -122,25 +163,36 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE3EDF7),
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE3EDF7),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.transparent),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Welcome to NS\nTransport',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : const Color(0xFF102A43),
-                              height: 1.2,
-                            ),
-                          ),
+                          isDark
+                            ? GradientText(
+                                AppTranslations.get('welcome_ns_transport', locale),
+                                gradient: const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF2979FF)]),
+                                style: AppTheme.getFont(locale,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.2,
+                                ),
+                              )
+                            : Text(
+                                AppTranslations.get('welcome_ns_transport', locale),
+                                style: AppTheme.getFont(locale,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF102A43),
+                                  height: 1.2,
+                                ),
+                              ),
                           const SizedBox(height: 16),
                           Text(
-                            'Manage your employees, approve submissions,\nand track performance efficiently.',
-                            style: TextStyle(
+                            AppTranslations.get('manage_employees_desc', locale),
+                            style: AppTheme.getFont(locale,
                               fontSize: 16,
                               color: isDark ? Colors.grey.shade300 : const Color(0xFF334E68),
                               height: 1.4,
@@ -151,8 +203,8 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
                     ),
                     const SizedBox(height: 32),
                     Text(
-                      'Quick Statistics',
-                      style: TextStyle(
+                      AppTranslations.get('quick_statistics', locale),
+                      style: AppTheme.getFont(locale,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: isDark ? Colors.white : const Color(0xFF102A43),
@@ -168,39 +220,39 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
                       childAspectRatio: 1.1,
                       children: [
                         _buildStatCard(
-                          'Total Employees',
+                          AppTranslations.get('total_employees', locale),
                           totalEmployees.toString(),
                           Icons.people,
                           const Color(0xFF3498DB), // Blue
-                          isDark, context
+                          isDark, context, locale
                         ),
                         _buildStatCard(
-                          'Pending Approvals',
+                          AppTranslations.get('pending_approvals', locale),
                           pendingReports.toString(),
                           Icons.assignment_turned_in,
                           const Color(0xFFF39C12), // Orange
-                          isDark, context
+                          isDark, context, locale
                         ),
                         _buildStatCard(
-                          'Monthly Earnings',
+                          AppTranslations.get('monthly_earnings', locale),
                           '₹${totalIncome.toStringAsFixed(0)}',
                           Icons.trending_up,
                           const Color(0xFF2ECC71), // Green
-                          isDark, context
+                          isDark, context, locale
                         ),
                         _buildStatCard(
-                          'Total Trips',
+                          AppTranslations.get('total_trips', locale),
                           totalTrips.toString(),
                           Icons.directions_car,
                           const Color(0xFF9B59B6), // Purple
-                          isDark, context
+                          isDark, context, locale
                         ),
                       ],
                     ),
                     const SizedBox(height: 32),
                     Text(
                       'Quick Actions',
-                      style: TextStyle(
+                      style: GoogleFonts.outfit(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: isDark ? Colors.white : const Color(0xFF102A43),
@@ -247,8 +299,9 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? Theme.of(context).cardTheme.color : Colors.white,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
               shape: BoxShape.circle,
+              border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.1)) : null,
               boxShadow: [
                 if (!isDark)
                   BoxShadow(
@@ -259,12 +312,12 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
                   ),
               ],
             ),
-            child: Icon(icon, color: isDark ? const Color(0xFF64B5F6) : const Color(0xFF1976D2), size: 28),
+            child: Icon(icon, color: isDark ? Theme.of(context).colorScheme.primary : const Color(0xFF1976D2), size: 28),
           ),
           const SizedBox(height: 12),
           Text(
             label,
-            style: TextStyle(
+            style: GoogleFonts.outfit(
               fontWeight: FontWeight.w600,
               color: isDark ? Colors.white70 : const Color(0xFF334E68),
             ),

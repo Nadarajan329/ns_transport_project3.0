@@ -8,17 +8,17 @@ class TripModel {
   final String? loadType;
   final String loadTonnage;
   final double rentAmount;
-  final double fuelExpense;
-  final double tollExpense;
-  final double foodExpense;
+  final double loadingExpense;
+  final double unloadingExpense;
   final double otherExpense;
+  final List<Map<String, dynamic>>? otherExpenseDetails;
   final double advanceAmount;
   final double? totalExpense;
   final double? remainingBalance;
   final double? netProfit;
   final String? notes;
-  final String? billImage;
-  final String? receiptImage;
+  final List<String>? billImages;
+  final List<String>? receiptImages;
   final List<String>? documentUrls;
   final String status; // 'draft', 'submitted', 'approved', 'rejected'
   final String? ownerComment;
@@ -35,17 +35,17 @@ class TripModel {
     this.loadType,
     required this.loadTonnage,
     required this.rentAmount,
-    required this.fuelExpense,
-    required this.tollExpense,
-    required this.foodExpense,
+    required this.loadingExpense,
+    required this.unloadingExpense,
     required this.otherExpense,
+    this.otherExpenseDetails,
     required this.advanceAmount,
     this.totalExpense,
     this.remainingBalance,
     this.netProfit,
     this.notes,
-    this.billImage,
-    this.receiptImage,
+    this.billImages,
+    this.receiptImages,
     this.documentUrls,
     required this.status,
     this.ownerComment,
@@ -63,18 +63,20 @@ class TripModel {
       toLocation: json['to_location'] as String,
       loadType: json['load_type'] as String?,
       loadTonnage: json['load_tonnage'] as String? ?? '',
-      rentAmount: (json['rent_amount'] as num).toDouble(),
-      fuelExpense: (json['fuel_expense'] as num).toDouble(),
-      tollExpense: (json['toll_expense'] as num).toDouble(),
-      foodExpense: (json['food_expense'] as num).toDouble(),
-      otherExpense: (json['other_expense'] as num).toDouble(),
-      advanceAmount: (json['advance_amount'] as num).toDouble(),
-      totalExpense: json['total_expense'] != null ? (json['total_expense'] as num).toDouble() : null,
-      remainingBalance: json['remaining_balance'] != null ? (json['remaining_balance'] as num).toDouble() : null,
-      netProfit: json['net_profit'] != null ? (json['net_profit'] as num).toDouble() : null,
+      rentAmount: (json['rent_amount'] as num?)?.toDouble() ?? 0.0,
+      loadingExpense: (json['loading_expense'] as num?)?.toDouble() ?? 0.0,
+      unloadingExpense: (json['unloading_expense'] as num?)?.toDouble() ?? 0.0,
+      otherExpense: (json['other_expense'] as num?)?.toDouble() ?? 0.0,
+      otherExpenseDetails: json['other_expense_details'] != null 
+          ? (json['other_expense_details'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList() 
+          : null,
+      advanceAmount: (json['advance_amount'] as num?)?.toDouble() ?? 0.0,
+      totalExpense: (json['total_expense'] as num?)?.toDouble(),
+      remainingBalance: (json['remaining_balance'] as num?)?.toDouble(),
+      netProfit: (json['net_profit'] as num?)?.toDouble(),
       notes: json['notes'] as String?,
-      billImage: json['bill_image'] as String?,
-      receiptImage: json['receipt_image'] as String?,
+      billImages: json['bill_images'] != null ? List<String>.from(json['bill_images']) : null,
+      receiptImages: json['receipt_images'] != null ? List<String>.from(json['receipt_images']) : null,
       documentUrls: (json['document_urls'] as List<dynamic>?)?.map((e) => e as String).toList(),
       status: json['status'] as String,
       ownerComment: json['owner_comment'] as String?,
@@ -94,17 +96,17 @@ class TripModel {
       if (loadType != null) 'load_type': loadType,
       'load_tonnage': loadTonnage,
       'rent_amount': rentAmount,
-      'fuel_expense': fuelExpense,
-      'toll_expense': tollExpense,
-      'food_expense': foodExpense,
+      'loading_expense': loadingExpense,
+      'unloading_expense': unloadingExpense,
       'other_expense': otherExpense,
+      if (otherExpenseDetails != null) 'other_expense_details': otherExpenseDetails,
       'advance_amount': advanceAmount,
       if (totalExpense != null) 'total_expense': totalExpense,
       if (remainingBalance != null) 'remaining_balance': remainingBalance,
       if (netProfit != null) 'net_profit': netProfit,
       if (notes != null) 'notes': notes,
-      if (billImage != null) 'bill_image': billImage,
-      if (receiptImage != null) 'receipt_image': receiptImage,
+      if (billImages != null) 'bill_images': billImages,
+      if (receiptImages != null) 'receipt_images': receiptImages,
       if (documentUrls != null) 'document_urls': documentUrls,
       'status': status,
       if (ownerComment != null) 'owner_comment': ownerComment,
@@ -123,17 +125,17 @@ class TripModel {
     String? loadType,
     String? loadTonnage,
     double? rentAmount,
-    double? fuelExpense,
-    double? tollExpense,
-    double? foodExpense,
+    double? loadingExpense,
+    double? unloadingExpense,
     double? otherExpense,
+    List<Map<String, dynamic>>? otherExpenseDetails,
     double? advanceAmount,
     double? totalExpense,
     double? remainingBalance,
     double? netProfit,
     String? notes,
-    String? billImage,
-    String? receiptImage,
+    List<String>? billImages,
+    List<String>? receiptImages,
     List<String>? documentUrls,
     String? status,
     String? ownerComment,
@@ -150,17 +152,17 @@ class TripModel {
       loadType: loadType ?? this.loadType,
       loadTonnage: loadTonnage ?? this.loadTonnage,
       rentAmount: rentAmount ?? this.rentAmount,
-      fuelExpense: fuelExpense ?? this.fuelExpense,
-      tollExpense: tollExpense ?? this.tollExpense,
-      foodExpense: foodExpense ?? this.foodExpense,
+      loadingExpense: loadingExpense ?? this.loadingExpense,
+      unloadingExpense: unloadingExpense ?? this.unloadingExpense,
       otherExpense: otherExpense ?? this.otherExpense,
+      otherExpenseDetails: otherExpenseDetails ?? this.otherExpenseDetails,
       advanceAmount: advanceAmount ?? this.advanceAmount,
       totalExpense: totalExpense ?? this.totalExpense,
       remainingBalance: remainingBalance ?? this.remainingBalance,
       netProfit: netProfit ?? this.netProfit,
       notes: notes ?? this.notes,
-      billImage: billImage ?? this.billImage,
-      receiptImage: receiptImage ?? this.receiptImage,
+      billImages: billImages ?? this.billImages,
+      receiptImages: receiptImages ?? this.receiptImages,
       documentUrls: documentUrls ?? this.documentUrls,
       status: status ?? this.status,
       ownerComment: ownerComment ?? this.ownerComment,

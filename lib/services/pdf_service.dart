@@ -8,7 +8,7 @@ class PdfService {
   static Future<void> generateAndPrintTripReport(TripModel trip) async {
     final pdf = pw.Document();
 
-    final totalExpenses = trip.fuelExpense + trip.tollExpense + trip.foodExpense + trip.otherExpense;
+    final totalExpenses = trip.loadingExpense + trip.unloadingExpense + trip.otherExpense;
     final netProfit = trip.rentAmount - totalExpenses;
     final remainingBalance = trip.rentAmount - trip.advanceAmount - totalExpenses;
 
@@ -88,10 +88,15 @@ class PdfService {
                   border: pw.TableBorder.all(color: PdfColors.grey300),
                   children: [
                     _buildPdfTableRow('Rent Revenue', Formatters.formatCurrency(trip.rentAmount)),
-                    _buildPdfTableRow('Fuel Expenses', '- ${Formatters.formatCurrency(trip.fuelExpense)}'),
-                    _buildPdfTableRow('Toll Expenses', '- ${Formatters.formatCurrency(trip.tollExpense)}'),
-                    _buildPdfTableRow('Food Expenses', '- ${Formatters.formatCurrency(trip.foodExpense)}'),
-                    _buildPdfTableRow('Other Expenses', '- ${Formatters.formatCurrency(trip.otherExpense)}'),
+                    _buildPdfTableRow('Loading Expenses', '- ${Formatters.formatCurrency(trip.loadingExpense)}'),
+                    _buildPdfTableRow('Unloading Expenses', '- ${Formatters.formatCurrency(trip.unloadingExpense)}'),
+                    if (trip.otherExpenseDetails != null && trip.otherExpenseDetails!.isNotEmpty)
+                      ...trip.otherExpenseDetails!.map((e) => _buildPdfTableRow(
+                        e['description']?.toString().isNotEmpty == true ? e['description']! : 'Other Expense', 
+                        '- ${Formatters.formatCurrency((e['amount'] as num).toDouble())}'
+                      ))
+                    else if (trip.otherExpense > 0)
+                      _buildPdfTableRow('Other Expenses', '- ${Formatters.formatCurrency(trip.otherExpense)}'),
                     _buildPdfTableRow('Total Trip Expenses', Formatters.formatCurrency(totalExpenses), isBold: true),
                     _buildPdfTableRow('Advance Paid to Driver', '- ${Formatters.formatCurrency(trip.advanceAmount)}'),
                     _buildPdfTableRow('Net Profit Margin', Formatters.formatCurrency(netProfit), isBold: true),

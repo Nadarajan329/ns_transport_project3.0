@@ -132,7 +132,7 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
           final trip = trips[tripIndex];
 
           // Compute values
-          final totalExpenses = trip.fuelExpense + trip.tollExpense + trip.foodExpense + trip.otherExpense;
+          final totalExpenses = trip.loadingExpense + trip.unloadingExpense + trip.otherExpense;
           final netProfit = trip.rentAmount - totalExpenses;
           final remainingBalance = trip.rentAmount - trip.advanceAmount - totalExpenses;
 
@@ -303,10 +303,15 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
             Text('Financial Summary', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 16),
             _buildFinancialRow('Rent Amount', trip.rentAmount, isPrimary: true),
-            _buildFinancialRow('Fuel Expense', -trip.fuelExpense),
-            _buildFinancialRow('Toll Expense', -trip.tollExpense),
-            _buildFinancialRow('Food Expense', -trip.foodExpense),
-            _buildFinancialRow('Other Expense', -trip.otherExpense),
+            _buildFinancialRow('Loading Expense', -trip.loadingExpense),
+            _buildFinancialRow('Unloading Expense', -trip.unloadingExpense),
+            if (trip.otherExpenseDetails != null && trip.otherExpenseDetails!.isNotEmpty)
+              ...trip.otherExpenseDetails!.map((e) => _buildFinancialRow(
+                e['description']?.toString().isNotEmpty == true ? e['description']! : 'Other Expense', 
+                -(e['amount'] as num).toDouble()
+              ))
+            else if (trip.otherExpense > 0)
+              _buildFinancialRow('Other Expense', -trip.otherExpense),
             const Divider(height: 24),
             _buildFinancialRow('Total Expenses', totalExpenses, isBold: true),
             _buildFinancialRow('Advance Received', -trip.advanceAmount),
@@ -364,31 +369,61 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
           children: [
             Text('Receipts & Documents', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _buildImageThumbnail('Bill Photo', trip.billImage)),
-                const SizedBox(width: 16),
-                Expanded(child: _buildImageThumbnail('Fuel Receipt', trip.receiptImage)),
-              ],
-            )
+            _buildMultiImageThumbnails('Bill Photos', trip.billImages),
+            const SizedBox(height: 16),
+            _buildMultiImageThumbnails('Fuel Receipts', trip.receiptImages),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildImageThumbnail(String label, String? path) {
-    Widget imageWidget;
-    if (path == null) {
-      imageWidget = Container(
-        height: 100,
-        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
-        child: const Icon(Icons.image_not_supported, color: Colors.grey),
+  Widget _buildMultiImageThumbnails(String label, List<String>? paths) {
+    if (paths == null || paths.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600)),
+          const SizedBox(height: 6),
+          Container(
+            height: 100,
+            width: 100,
+            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.image_not_supported, color: Colors.grey),
+          ),
+        ],
       );
-    } else if (path.startsWith('http') || path.startsWith('https')) {
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600)),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: paths.length,
+            itemBuilder: (context, index) {
+              final path = paths[index];
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: _buildSingleThumbnail(path),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSingleThumbnail(String path) {
+    Widget imageWidget;
+    if (path.startsWith('http') || path.startsWith('https')) {
       imageWidget = ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.network(path, height: 100, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
+        child: Image.network(path, height: 100, width: 100, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
           return const Icon(Icons.broken_image, color: Colors.grey);
         }),
       );
@@ -396,39 +431,29 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
       imageWidget = ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: kIsWeb 
-            ? Image.network(path, height: 100, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
+            ? Image.network(path, height: 100, width: 100, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
                 return const Icon(Icons.broken_image, color: Colors.grey);
               })
-            : Image.file(File(path), height: 100, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
+            : Image.file(File(path), height: 100, width: 100, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
                 return const Icon(Icons.broken_image, color: Colors.grey);
               }),
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600)),
-        const SizedBox(height: 6),
-        InkWell(
-          onTap: path != null
-              ? () {
-                  // Simple lightbox preview
-                  showDialog(
-                    context: context,
-                    builder: (context) => Dialog(
-                      child: InteractiveViewer(
-                        child: path.startsWith('http')
-                            ? Image.network(path)
-                            : (kIsWeb ? Image.network(path) : Image.file(File(path))),
-                      ),
-                    ),
-                  );
-                }
-              : null,
-          child: imageWidget,
-        ),
-      ],
+    return InkWell(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) => Dialog(
+            child: InteractiveViewer(
+              child: path.startsWith('http')
+                  ? Image.network(path)
+                  : (kIsWeb ? Image.network(path) : Image.file(File(path))),
+            ),
+          ),
+        );
+      },
+      child: imageWidget,
     );
   }
 

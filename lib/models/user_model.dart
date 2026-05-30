@@ -5,6 +5,7 @@ class UserModel {
   final String? phone;
   final String role; // 'owner' or 'driver'
   final String? avatarUrl;
+  final double advanceBalance;
   final DateTime? createdAt;
 
   UserModel({
@@ -14,6 +15,7 @@ class UserModel {
     this.phone,
     required this.role,
     this.avatarUrl,
+    this.advanceBalance = 0.0,
     this.createdAt,
   });
 
@@ -28,6 +30,9 @@ class UserModel {
       phone: json['phone'] as String?,
       role: json['role'] as String,
       avatarUrl: json['avatar_url'] as String?,
+      advanceBalance: json['advance_balance'] != null 
+          ? (json['advance_balance'] as num).toDouble() 
+          : 0.0,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
@@ -42,6 +47,7 @@ class UserModel {
       if (phone != null) 'phone': phone,
       'role': role,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
+      'advance_balance': advanceBalance,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
   }
@@ -53,6 +59,7 @@ class UserModel {
     String? phone,
     String? role,
     String? avatarUrl,
+    double? advanceBalance,
     DateTime? createdAt,
   }) {
     return UserModel(
@@ -62,6 +69,7 @@ class UserModel {
       phone: phone ?? this.phone,
       role: role ?? this.role,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      advanceBalance: advanceBalance ?? this.advanceBalance,
       createdAt: createdAt ?? this.createdAt,
     );
   }

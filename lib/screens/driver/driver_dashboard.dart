@@ -1,8 +1,13 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ns_transport/widgets/gradient_text.dart';
 import 'package:ns_transport/providers/auth_provider.dart';
 import 'package:ns_transport/providers/trip_provider.dart';
+import 'package:ns_transport/providers/locale_provider.dart';
+import 'package:ns_transport/core/localization/app_translations.dart';
+import 'package:ns_transport/core/theme/app_theme.dart';
 import 'package:ns_transport/routes/app_routes.dart';
 import 'package:ns_transport/widgets/app_drawer.dart';
 import 'package:ns_transport/widgets/empty_state.dart';
@@ -57,17 +62,19 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
   Widget build(BuildContext context) {
     final tripState = ref.watch(tripProvider);
     final user = ref.watch(authProvider).value;
-
-    final primaryColor = const Color(0xFF1565C0);
+    final locale = ref.watch(localeProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final headerColor = isDark ? Theme.of(context).appBarTheme.backgroundColor ?? const Color(0xFF1E1E1E) : const Color(0xFF1565C0);
 
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Driver Dashboard',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
+          AppTranslations.get('driver_dashboard', locale),
+          style: AppTheme.getFont(locale, fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        backgroundColor: primaryColor,
+        backgroundColor: headerColor,
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         actions: [
@@ -138,82 +145,103 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [primaryColor, primaryColor.withValues(alpha: 0.8)],
+                          colors: [headerColor, isDark ? headerColor.withValues(alpha: 0.9) : primaryColor.withValues(alpha: 0.8)],
                         ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Welcome back,',
-                            style: GoogleFonts.inter(
+                            AppTranslations.get('welcome_back', locale),
+                            style: AppTheme.getFont(locale,
                               color: Colors.white70,
                               fontSize: 14,
                             ),
                           ),
-                          Text(
-                            user?.name ?? 'Driver',
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                          isDark 
+                            ? GradientText(
+                              user?.name ?? AppTranslations.get('driver', locale),
+                              gradient: const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF2979FF)]),
+                              style: AppTheme.getFont(locale,
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                            : Text(
+                              user?.name ?? AppTranslations.get('driver', locale),
+                              style: AppTheme.getFont(locale,
+                                color: Colors.white,
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
                           const SizedBox(height: 20),
                           
                           // Glassmorphic Statistics Card
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                width: 1.5,
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.15),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.2),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _buildStatItem(
+                                      AppTranslations.get('my_trips', locale),
+                                      totalTrips.toString(),
+                                      Icons.local_shipping_outlined,
+                                      isDark,
+                                      locale,
+                                    ),
+                                    Container(
+                                      width: 1,
+                                      height: 40,
+                                      color: Colors.white30,
+                                    ),
+                                    _buildStatItem(
+                                      AppTranslations.get('pending', locale),
+                                      pendingApprovals.toString(),
+                                      Icons.hourglass_empty,
+                                      isDark,
+                                      locale,
+                                    ),
+                                    Container(
+                                      width: 1,
+                                      height: 40,
+                                      color: Colors.white30,
+                                    ),
+                                    _buildStatItem(
+                                      AppTranslations.get('earnings', locale),
+                                      Formatters.formatCurrency(totalRent, compact: true),
+                                      Icons.account_balance_wallet_outlined,
+                                      isDark,
+                                      locale,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildStatItem(
-                                  'My Trips',
-                                  totalTrips.toString(),
-                                  Icons.local_shipping_outlined,
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: 40,
-                                  color: Colors.white30,
-                                ),
-                                _buildStatItem(
-                                  'Pending',
-                                  pendingApprovals.toString(),
-                                  Icons.hourglass_empty,
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: 40,
-                                  color: Colors.white30,
-                                ),
-                                _buildStatItem(
-                                  'Earnings',
-                                  Formatters.formatCurrency(totalRent, compact: true),
-                                  Icons.account_balance_wallet_outlined,
-                                ),
-                              ],
                             ),
                           ),
                           const SizedBox(height: 20),
                           TextField(
                             decoration: InputDecoration(
-                              hintText: 'Search trips...',
-                              hintStyle: const TextStyle(color: Colors.white70),
-                              prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                              hintText: AppTranslations.get('search_trips', locale),
+                              hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.white70),
+                              prefixIcon: Icon(Icons.search, color: isDark ? Colors.white54 : Colors.white70),
                               filled: true,
-                              fillColor: Colors.white.withValues(alpha: 0.2),
+                              fillColor: Colors.white.withValues(alpha: isDark ? 0.05 : 0.2),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+                                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                               ),
                               contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                             ),
@@ -237,10 +265,10 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
                         unselectedLabelColor: Colors.grey,
                         indicatorColor: primaryColor,
                         indicatorWeight: 3,
-                        tabs: const [
-                          Tab(text: 'My Trips'),
-                          Tab(text: 'Drafts'),
-                          Tab(text: 'All History'),
+                        tabs: [
+                          Tab(text: AppTranslations.get('my_trips', locale)),
+                          Tab(text: AppTranslations.get('drafts', locale)),
+                          Tab(text: AppTranslations.get('all_history', locale)),
                         ],
                       ),
                     ),
@@ -250,9 +278,9 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
               body: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildTripList(activeTrips, 'No submitted trips yet.'),
-                  _buildTripList(draftTrips, 'No draft reports saved.', isDraft: true),
-                  _buildTripList(filteredTrips, 'No trips in history.'),
+                  _buildTripList(activeTrips, AppTranslations.get('no_submitted_trips', locale), locale),
+                  _buildTripList(draftTrips, AppTranslations.get('no_draft_reports', locale), locale, isDraft: true),
+                  _buildTripList(filteredTrips, AppTranslations.get('no_trips_history', locale), locale),
                 ],
               ),
             );
@@ -262,8 +290,8 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
           ),
           error: (err, stack) => Center(
             child: Text(
-              'Error loading dashboard: $err',
-              style: GoogleFonts.inter(color: Colors.red),
+              '${AppTranslations.get('error_loading', locale)}: $err',
+              style: AppTheme.getFont(locale, color: Colors.red),
             ),
           ),
         ),
@@ -277,27 +305,36 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: Text('New Trip', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        label: Text(AppTranslations.get('new_trip', locale), style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon) {
+  Widget _buildStatItem(String label, String value, IconData icon, bool isDark, String locale) {
     return Column(
       children: [
-        Icon(icon, color: Colors.white, size: 24),
+        Icon(icon, color: isDark ? Theme.of(context).colorScheme.primary : Colors.white, size: 24),
         const SizedBox(height: 6),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        isDark 
+          ? GradientText(
+              value,
+              gradient: const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF2979FF)]),
+              style: AppTheme.getFont(locale,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          : Text(
+              value,
+              style: AppTheme.getFont(locale,
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppTheme.getFont(locale,
             color: Colors.white70,
             fontSize: 12,
           ),
@@ -306,7 +343,7 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
     );
   }
 
-  Widget _buildTripList(List<dynamic> list, String emptyMessage, {bool isDraft = false}) {
+  Widget _buildTripList(List<dynamic> list, String emptyMessage, String locale, {bool isDraft = false}) {
     if (list.isEmpty) {
       return Center(
         child: SingleChildScrollView(
@@ -330,7 +367,7 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
           margin: const EdgeInsets.only(bottom: 12.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade200),
+            side: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade200),
           ),
           child: ListTile(
             contentPadding: const EdgeInsets.all(16.0),
@@ -339,7 +376,7 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
               children: [
                 Text(
                   trip.vehicleNumber,
-                  style: GoogleFonts.inter(
+                  style: AppTheme.getFont(locale,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -358,7 +395,7 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
                     Expanded(
                       child: Text(
                         '${trip.fromLocation} → ${trip.toLocation}',
-                        style: GoogleFonts.inter(fontSize: 14),
+                        style: AppTheme.getFont(locale, fontSize: 14),
                       ),
                     ),
                   ],
@@ -370,12 +407,12 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
                     const SizedBox(width: 4),
                     Text(
                       Formatters.formatDate(trip.tripDate),
-                      style: GoogleFonts.inter(fontSize: 14),
+                      style: AppTheme.getFont(locale, fontSize: 14),
                     ),
                     const Spacer(),
                     Text(
                       Formatters.formatCurrency(trip.rentAmount),
-                      style: GoogleFonts.inter(
+                      style: AppTheme.getFont(locale,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: Colors.green.shade700,
@@ -414,7 +451,7 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: Colors.white,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: _tabBar,
     );
   }

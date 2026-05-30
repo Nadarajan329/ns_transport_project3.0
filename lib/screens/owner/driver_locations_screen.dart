@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ns_transport/providers/locale_provider.dart';
+import 'package:ns_transport/core/localization/app_translations.dart';
+import 'package:ns_transport/core/theme/app_theme.dart';
 
 /// Provider that fetches all drivers with their location data from Supabase.
 final driverLocationsProvider =
@@ -35,15 +38,16 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
     final driversAsync = ref.watch(driverLocationsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final locale = ref.watch(localeProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Driver Locations',
-          style: TextStyle(
+        title: Text(
+          AppTranslations.get('driver_locations', locale),
+          style: AppTheme.getFont(locale,
             fontWeight: FontWeight.bold,
             fontSize: 20,
             color: Colors.white,
-            inherit: false,
           ),
         ),
         backgroundColor:
@@ -57,7 +61,7 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.my_location),
-            tooltip: 'Reset view',
+            tooltip: AppTranslations.get('reset_view', locale),
             onPressed: () {
               _mapController.move(_defaultCenter, _defaultZoom);
               setState(() => _selectedDriverId = null);
@@ -65,20 +69,20 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: AppTranslations.get('refresh', locale),
             onPressed: () => ref.refresh(driverLocationsProvider),
           ),
         ],
       ),
       body: driversAsync.when(
-        data: (drivers) => _buildMapView(drivers, isDark),
-        loading: () => const Center(
+        data: (drivers) => _buildMapView(drivers, isDark, locale),
+        loading: () => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Loading driver locations...'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(AppTranslations.get('loading_locations', locale), style: AppTheme.getFont(locale)),
             ],
           ),
         ),
@@ -88,11 +92,11 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
-              Text('Error: $error', textAlign: TextAlign.center),
+              Text('${AppTranslations.get('error', locale)}: $error', textAlign: TextAlign.center, style: AppTheme.getFont(locale)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.refresh(driverLocationsProvider),
-                child: const Text('Retry'),
+                child: Text(AppTranslations.get('retry', locale), style: AppTheme.getFont(locale)),
               ),
             ],
           ),
@@ -101,7 +105,7 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
     );
   }
 
-  Widget _buildMapView(List<Map<String, dynamic>> drivers, bool isDark) {
+  Widget _buildMapView(List<Map<String, dynamic>> drivers, bool isDark, String locale) {
     // Build markers for drivers that have lat/lng
     final List<Marker> markers = [];
     final List<Map<String, dynamic>> driversWithLocation = [];
@@ -228,8 +232,8 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${driversWithLocation.length} / ${drivers.length} drivers on map',
-                  style: TextStyle(
+                  '${driversWithLocation.length} / ${drivers.length} ${AppTranslations.get('drivers_on_map', locale)}',
+                  style: AppTheme.getFont(locale,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                     color: isDark ? Colors.white : const Color(0xFF334E68),
@@ -267,8 +271,8 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No Driver Locations Available',
-                    style: TextStyle(
+                    AppTranslations.get('no_driver_locations', locale),
+                    style: AppTheme.getFont(locale,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : const Color(0xFF102A43),
@@ -276,9 +280,9 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Driver location data will appear here once\ndrivers share their location.',
+                    AppTranslations.get('no_driver_locations_desc', locale),
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: AppTheme.getFont(locale,
                       fontSize: 14,
                       color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                     ),
@@ -294,7 +298,7 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
             bottom: 24,
             left: 16,
             right: 16,
-            child: _buildDriverInfoCard(selectedDriver, isDark),
+            child: _buildDriverInfoCard(selectedDriver, isDark, locale),
           ),
 
         // Driver list at bottom (when none selected)
@@ -322,8 +326,8 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
                   Padding(
                     padding: const EdgeInsets.only(left: 20, top: 12, bottom: 4),
                     child: Text(
-                      'Active Drivers',
-                      style: TextStyle(
+                      AppTranslations.get('active_drivers', locale),
+                      style: AppTheme.getFont(locale,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                         color: isDark ? Colors.white70 : Colors.grey.shade600,
@@ -373,7 +377,7 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
                                   name.split(' ').first,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
+                                  style: AppTheme.getFont(locale,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: isDark ? Colors.white70 : Colors.black87,
@@ -394,10 +398,10 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
     );
   }
 
-  Widget _buildDriverInfoCard(Map<String, dynamic> driver, bool isDark) {
-    final name = driver['name'] ?? 'Unknown';
-    final email = driver['email'] ?? 'No email';
-    final phone = driver['phone'] ?? 'No phone';
+  Widget _buildDriverInfoCard(Map<String, dynamic> driver, bool isDark, String locale) {
+    final name = driver['name'] ?? AppTranslations.get('unknown_driver', locale);
+    final email = driver['email'] ?? AppTranslations.get('no_email', locale);
+    final phone = driver['phone'] ?? AppTranslations.get('no_phone', locale);
     final lat = driver['latitude'] as num?;
     final lng = driver['longitude'] as num?;
 
@@ -436,7 +440,7 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
               children: [
                 Text(
                   name,
-                  style: TextStyle(
+                  style: AppTheme.getFont(locale,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                     color: isDark ? Colors.white : const Color(0xFF102A43),
@@ -453,7 +457,7 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
                         email,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: AppTheme.getFont(locale,
                           fontSize: 13,
                           color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         ),
@@ -469,7 +473,7 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
                     const SizedBox(width: 4),
                     Text(
                       phone,
-                      style: TextStyle(
+                      style: AppTheme.getFont(locale,
                         fontSize: 13,
                         color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                       ),
@@ -485,7 +489,7 @@ class _DriverLocationsScreenState extends ConsumerState<DriverLocationsScreen> {
                       const SizedBox(width: 4),
                       Text(
                         '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}',
-                        style: TextStyle(
+                        style: AppTheme.getFont(locale,
                           fontSize: 13,
                           color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         ),

@@ -7,6 +7,10 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/status_badge.dart';
 import '../../providers/trip_provider.dart';
+import 'driver_management_screen.dart' show driversProvider;
+import 'package:ns_transport/providers/locale_provider.dart';
+import 'package:ns_transport/core/localization/app_translations.dart';
+import 'package:ns_transport/core/theme/app_theme.dart';
 
 class OwnerTripReviewScreen extends ConsumerStatefulWidget {
   const OwnerTripReviewScreen({super.key});
@@ -21,21 +25,30 @@ class _OwnerTripReviewScreenState extends ConsumerState<OwnerTripReviewScreen> {
   @override
   Widget build(BuildContext context) {
     final tripsAsync = ref.watch(tripProvider);
+    final driversAsync = ref.watch(driversProvider);
+    final locale = ref.watch(localeProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trip Reviews', style: TextStyle(color: Colors.white, inherit: false)),
+        title: Text(AppTranslations.get('trip_reviews', locale), style: AppTheme.getFont(locale, color: Colors.white)),
         backgroundColor: const Color(0xFF1565C0),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: const AppDrawer(),
       body: tripsAsync.when(
         data: (trips) {
+          final driversMap = driversAsync.maybeWhen(
+            data: (drivers) => {for (var d in drivers) d['id'] as String: d['name'] as String? ?? AppTranslations.get('unknown_driver', locale)},
+            orElse: () => <String, String>{},
+          );
+
           final submittedTrips = trips.where((t) {
             if (t.status != 'submitted') return false;
             if (_searchQuery.isEmpty) return true;
             final query = _searchQuery.toLowerCase();
-            return t.driverId.toLowerCase().contains(query) ||
+            final driverName = (driversMap[t.driverId] ?? t.driverId).toLowerCase();
+
+            return driverName.contains(query) ||
                    t.fromLocation.toLowerCase().contains(query) ||
                    t.toLocation.toLowerCase().contains(query);
           }).toList();
@@ -45,8 +58,10 @@ class _OwnerTripReviewScreenState extends ConsumerState<OwnerTripReviewScreen> {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
+                  style: AppTheme.getFont(locale),
                   decoration: InputDecoration(
-                    hintText: 'Search by driver or location...',
+                    hintText: AppTranslations.get('search_driver_location', locale),
+                    hintStyle: AppTheme.getFont(locale),
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -61,11 +76,11 @@ class _OwnerTripReviewScreenState extends ConsumerState<OwnerTripReviewScreen> {
                 ),
               ),
               if (submittedTrips.isEmpty)
-                const Expanded(
+                Expanded(
                   child: EmptyState(
                     icon: Icons.check_circle_outline,
-                    title: 'No Pending Reviews',
-                    message: 'No submitted trips match your search.',
+                    title: AppTranslations.get('no_pending_reviews', locale),
+                    message: AppTranslations.get('no_submitted_trips_match', locale),
                   ),
                 )
               else
@@ -84,8 +99,8 @@ class _OwnerTripReviewScreenState extends ConsumerState<OwnerTripReviewScreen> {
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                           title: Text(
-                            'Driver: ${trip.driverId}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            '${AppTranslations.get('driver_prefix', locale)}${driversMap[trip.driverId] ?? trip.driverId}',
+                            style: AppTheme.getFont(locale, fontWeight: FontWeight.bold),
                           ),
                           subtitle: Padding(
                             padding: const EdgeInsets.only(top: 8.0),
@@ -101,6 +116,7 @@ class _OwnerTripReviewScreenState extends ConsumerState<OwnerTripReviewScreen> {
                                         '${trip.fromLocation} to ${trip.toLocation}',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
+                                        style: AppTheme.getFont(locale),
                                       ),
                                     ),
                                   ],
@@ -110,7 +126,7 @@ class _OwnerTripReviewScreenState extends ConsumerState<OwnerTripReviewScreen> {
                                   children: [
                                     const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                                     const SizedBox(width: 4),
-                                    Text(dateStr),
+                                    Text(dateStr, style: AppTheme.getFont(locale)),
                                   ],
                                 ),
                               ],
@@ -135,8 +151,8 @@ class _OwnerTripReviewScreenState extends ConsumerState<OwnerTripReviewScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Text(
-            'Error loading trips: $error',
-            style: const TextStyle(color: Colors.red),
+            '${AppTranslations.get('error', locale)}: $error',
+            style: AppTheme.getFont(locale, color: Colors.red),
           ),
         ),
       ),

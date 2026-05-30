@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:ns_transport/widgets/app_drawer.dart';
+import 'package:ns_transport/providers/locale_provider.dart';
+import 'package:ns_transport/core/localization/app_translations.dart';
+import 'package:ns_transport/core/theme/app_theme.dart';
 
 final driversProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final response = await Supabase.instance.client
@@ -24,10 +27,11 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
   @override
   Widget build(BuildContext context) {
     final driversAsync = ref.watch(driversProvider);
+    final locale = ref.watch(localeProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Manage Drivers', style: TextStyle(color: Colors.white, inherit: false)),
+        title: Text(AppTranslations.get('manage_drivers', locale), style: AppTheme.getFont(locale, color: Colors.white)),
         backgroundColor: const Color(0xFF1565C0),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -35,7 +39,7 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
       body: driversAsync.when(
         data: (drivers) {
           if (drivers.isEmpty) {
-            return _buildEmptyState();
+            return _buildEmptyState(locale);
           }
 
           final filteredDrivers = drivers.where((d) {
@@ -56,8 +60,10 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: TextField(
+                    style: AppTheme.getFont(locale),
                     decoration: InputDecoration(
-                      hintText: 'Search by name or email...',
+                      hintText: AppTranslations.get('search_name_email', locale),
+                      hintStyle: AppTheme.getFont(locale),
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -77,8 +83,8 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
                     itemCount: filteredDrivers.length,
                     itemBuilder: (context, index) {
                       final driver = filteredDrivers[index];
-                      final name = driver['name'] ?? 'Unknown Driver';
-                      final email = driver['email'] ?? 'No email provided';
+                      final name = driver['name'] ?? AppTranslations.get('unknown_driver', locale);
+                      final email = driver['email'] ?? AppTranslations.get('no_email_provided', locale);
                       final phone = driver['phone'] ?? '';
 
                       return Card(
@@ -114,16 +120,16 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
                                   )
                                 : null,
                           ),
-                          title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          title: Text(name, style: AppTheme.getFont(locale, fontWeight: FontWeight.bold, fontSize: 16)),
                           subtitle: Padding(
                             padding: const EdgeInsets.only(top: 4.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(email),
+                                Text(email, style: AppTheme.getFont(locale)),
                                 if (phone.isNotEmpty) ...[
                                   const SizedBox(height: 2),
-                                  Text(phone, style: TextStyle(color: Colors.grey.shade600)),
+                                  Text(phone, style: AppTheme.getFont(locale, color: Colors.grey.shade600)),
                                 ]
                               ],
                             ),
@@ -133,18 +139,18 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
                             onSelected: (value) {
                               if (value == 'edit') {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Edit feature coming soon')),
+                                  SnackBar(content: Text(AppTranslations.get('edit_coming_soon', locale), style: AppTheme.getFont(locale))),
                                 );
                               }
                             },
                             itemBuilder: (BuildContext context) => [
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                 value: 'edit',
-                                child: Text('Edit Driver'),
+                                child: Text(AppTranslations.get('edit_driver', locale), style: AppTheme.getFont(locale)),
                               ),
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                 value: 'disable',
-                                child: Text('Disable Access'),
+                                child: Text(AppTranslations.get('disable_access', locale), style: AppTheme.getFont(locale)),
                               ),
                             ],
                           ),
@@ -164,11 +170,11 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
-              Text('Error loading drivers:\n$error', textAlign: TextAlign.center),
+              Text('${AppTranslations.get('error', locale)}:\n$error', textAlign: TextAlign.center, style: AppTheme.getFont(locale)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.refresh(driversProvider),
-                child: const Text('Retry'),
+                child: Text(AppTranslations.get('retry', locale), style: AppTheme.getFont(locale)),
               ),
             ],
           ),
@@ -177,18 +183,18 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Use register screen to add drivers')),
+            SnackBar(content: Text(AppTranslations.get('use_register_screen', locale), style: AppTheme.getFont(locale))),
           );
         },
         icon: const Icon(Icons.person_add),
-        label: const Text('Add Driver'),
+        label: Text(AppTranslations.get('add_driver_button', locale), style: AppTheme.getFont(locale)),
         backgroundColor: const Color(0xFF1565C0),
         foregroundColor: Colors.white,
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(String locale) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -196,13 +202,13 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
           Icon(Icons.people_outline, size: 64, color: Colors.grey.shade400),
           const SizedBox(height: 16),
           Text(
-            'No drivers found.',
-            style: TextStyle(fontSize: 18, color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+            AppTranslations.get('no_drivers_found', locale),
+            style: AppTheme.getFont(locale, fontSize: 18, color: Colors.grey.shade600, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            'Add a driver to get started.',
-            style: TextStyle(color: Colors.grey.shade500),
+            AppTranslations.get('add_driver_started', locale),
+            style: AppTheme.getFont(locale, color: Colors.grey.shade500),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -211,7 +217,7 @@ class _DriverManagementScreenState extends ConsumerState<DriverManagementScreen>
               ref.refresh(driversProvider);
             },
             icon: const Icon(Icons.refresh),
-            label: const Text('Refresh'),
+            label: Text(AppTranslations.get('refresh', locale), style: AppTheme.getFont(locale)),
           ),
         ],
       ),

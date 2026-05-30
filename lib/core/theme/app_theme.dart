@@ -9,9 +9,16 @@ import 'package:ns_transport/core/constants/app_colors.dart';
 class AppTheme {
   AppTheme._();
 
+  static TextStyle getFont(String locale, {double? fontSize, FontWeight? fontWeight, Color? color, double? letterSpacing, double? height}) {
+    if (locale == 'ta') {
+      return GoogleFonts.meeraInimai(fontSize: fontSize, fontWeight: fontWeight, color: color, letterSpacing: letterSpacing, height: height);
+    }
+    return GoogleFonts.outfit(fontSize: fontSize, fontWeight: fontWeight, color: color, letterSpacing: letterSpacing, height: height);
+  }
+
   // ───────────────────────────── Light Theme ─────────────────────────────
 
-  static ThemeData get lightTheme {
+  static ThemeData getLightTheme(String locale) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF1565C0),
       brightness: Brightness.light,
@@ -37,7 +44,7 @@ class AppTheme {
       shadow: Colors.black.withValues(alpha: 0.08),
     );
 
-    final textTheme = _buildTextTheme();
+    final textTheme = _buildTextTheme(locale);
 
     return ThemeData(
       useMaterial3: true,
@@ -55,7 +62,7 @@ class AppTheme {
         centerTitle: true,
         iconTheme: IconThemeData(color: AppColors.primary, size: 24),
         actionsIconTheme: IconThemeData(color: AppColors.primary, size: 24),
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: getFont(locale, 
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: AppColors.primary,
@@ -93,7 +100,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: getFont(locale, 
             fontSize: 15,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.2,
@@ -112,7 +119,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(12),
           ),
           side: BorderSide(color: AppColors.primary, width: 1.5),
-          textStyle: GoogleFonts.inter(
+          textStyle: getFont(locale, 
             fontSize: 15,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.2,
@@ -128,7 +135,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: getFont(locale, 
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -144,22 +151,22 @@ class AppTheme {
           vertical: 16,
         ),
         floatingLabelBehavior: FloatingLabelBehavior.auto,
-        floatingLabelStyle: GoogleFonts.inter(
+        floatingLabelStyle: getFont(locale, 
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: AppColors.primary,
         ),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: getFont(locale, 
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: const Color(0xFF9E9E9E),
         ),
-        hintStyle: GoogleFonts.inter(
+        hintStyle: getFont(locale, 
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: const Color(0xFFBDBDBD),
         ),
-        errorStyle: GoogleFonts.inter(
+        errorStyle: getFont(locale, 
           fontSize: 12,
           fontWeight: FontWeight.w400,
           color: const Color(0xFFD32F2F),
@@ -220,11 +227,11 @@ class AppTheme {
           color: Color(0xFF9E9E9E),
           size: 24,
         ),
-        selectedLabelStyle: GoogleFonts.inter(
+        selectedLabelStyle: getFont(locale, 
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: GoogleFonts.inter(
+        unselectedLabelStyle: getFont(locale, 
           fontSize: 12,
           fontWeight: FontWeight.w400,
         ),
@@ -249,13 +256,13 @@ class AppTheme {
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return GoogleFonts.inter(
+            return getFont(locale, 
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.primary,
             );
           }
-          return GoogleFonts.inter(
+          return getFont(locale, 
             fontSize: 12,
             fontWeight: FontWeight.w400,
             color: const Color(0xFF9E9E9E),
@@ -275,7 +282,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
         ),
         extendedPadding: const EdgeInsets.symmetric(horizontal: 24),
-        extendedTextStyle: GoogleFonts.inter(
+        extendedTextStyle: getFont(locale, 
           fontSize: 14,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.2,
@@ -307,12 +314,12 @@ class AppTheme {
         backgroundColor: const Color(0xFFF5F7FA),
         selectedColor: AppColors.primary.withValues(alpha: 0.12),
         disabledColor: const Color(0xFFF5F5F5),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: getFont(locale, 
           fontSize: 13,
           fontWeight: FontWeight.w400,
           color: const Color(0xFF424242),
         ),
-        secondaryLabelStyle: GoogleFonts.inter(
+        secondaryLabelStyle: getFont(locale, 
           fontSize: 13,
           fontWeight: FontWeight.w500,
           color: AppColors.primary,
@@ -336,13 +343,13 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: getFont(locale, 
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: const Color(0xFF1C1B1F),
           letterSpacing: -0.2,
         ),
-        contentTextStyle: GoogleFonts.inter(
+        contentTextStyle: getFont(locale, 
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: const Color(0xFF616161),
@@ -353,7 +360,7 @@ class AppTheme {
       // ── SnackBar ──
       snackBarTheme: SnackBarThemeData(
         backgroundColor: const Color(0xFF323232),
-        contentTextStyle: GoogleFonts.inter(
+        contentTextStyle: getFont(locale, 
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: Colors.white,
@@ -373,11 +380,11 @@ class AppTheme {
         indicatorSize: TabBarIndicatorSize.label,
         labelColor: AppColors.primary,
         unselectedLabelColor: const Color(0xFF9E9E9E),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: getFont(locale, 
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: GoogleFonts.inter(
+        unselectedLabelStyle: getFont(locale, 
           fontSize: 14,
           fontWeight: FontWeight.w400,
         ),
@@ -393,12 +400,12 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: getFont(locale, 
           fontSize: 15,
           fontWeight: FontWeight.w500,
           color: const Color(0xFF1C1B1F),
         ),
-        subtitleTextStyle: GoogleFonts.inter(
+        subtitleTextStyle: getFont(locale, 
           fontSize: 13,
           fontWeight: FontWeight.w400,
           color: const Color(0xFF757575),
@@ -429,7 +436,7 @@ class AppTheme {
           color: const Color(0xFF616161),
           borderRadius: BorderRadius.circular(8),
         ),
-        textStyle: GoogleFonts.inter(
+        textStyle: getFont(locale, 
           fontSize: 12,
           fontWeight: FontWeight.w400,
           color: Colors.white,
@@ -482,135 +489,139 @@ class AppTheme {
 
   // ───────────────────────────── Dark Theme ─────────────────────────────
 
-  static ThemeData get darkTheme {
+  static ThemeData getDarkTheme(String locale) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF1565C0),
       brightness: Brightness.dark,
-      primary: const Color(0xFF90CAF9),
-      onPrimary: const Color(0xFF0D47A1),
-      secondary: const Color(0xFF64B5F6),
-      surface: const Color(0xFF1E1E1E),
-      onSurface: const Color(0xFFE0E0E0),
-      error: const Color(0xFFEF9A9A),
-      onError: const Color(0xFF601410),
+      primary: AppColors.neonCyan,
+      onPrimary: const Color(0xFF003344),
+      secondary: AppColors.neonCyan,
+      surface: AppColors.cryptoBackground,
+      onSurface: Colors.white,
+      error: const Color(0xFFFF1744),
+      onError: Colors.white,
     );
 
-    final textTheme = _buildTextTheme();
+    final textTheme = _buildTextTheme(locale);
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: const Color(0xFF121212),
+      scaffoldBackgroundColor: AppColors.cryptoBackground,
       textTheme: textTheme.apply(
-        bodyColor: const Color(0xFFE0E0E0),
-        displayColor: const Color(0xFFE0E0E0),
+        bodyColor: Colors.white,
+        displayColor: Colors.white,
       ),
 
       appBarTheme: AppBarTheme(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: AppColors.cryptoBackground,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Color(0xFF90CAF9), size: 24),
-        titleTextStyle: GoogleFonts.inter(
+        iconTheme: const IconThemeData(color: AppColors.neonCyan, size: 24),
+        titleTextStyle: getFont(locale, 
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFF90CAF9),
+          color: Colors.white,
           letterSpacing: -0.2,
         ),
       ),
 
       cardTheme: CardThemeData(
-        color: const Color(0xFF2C2C2C),
+        color: AppColors.cryptoCard,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF90CAF9),
-          foregroundColor: const Color(0xFF0D47A1),
-          elevation: 0,
+          backgroundColor: AppColors.neonCyan,
+          foregroundColor: const Color(0xFF003344),
+          elevation: 8,
+          shadowColor: AppColors.neonCyan,
           minimumSize: const Size(double.infinity, 52),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
+          textStyle: getFont(locale, fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF2C2C2C),
+        fillColor: const Color(0xFF161A24),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF9E9E9E)),
-        hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF757575)),
+        labelStyle: getFont(locale, fontSize: 14, color: const Color(0xFF8B94A5)),
+        hintStyle: getFont(locale, fontSize: 14, color: const Color(0xFF5A667A)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF90CAF9), width: 1.5),
+          borderSide: const BorderSide(color: AppColors.neonCyan, width: 1.5),
         ),
       ),
 
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: const Color(0xFF90CAF9),
-        foregroundColor: const Color(0xFF0D47A1),
-        elevation: 4,
+        backgroundColor: AppColors.neonCyan,
+        foregroundColor: const Color(0xFF003344),
+        elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
 
       dialogTheme: DialogThemeData(
-        backgroundColor: const Color(0xFF2C2C2C),
+        backgroundColor: AppColors.cryptoCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titleTextStyle: GoogleFonts.inter(
-          fontSize: 20, fontWeight: FontWeight.w600, color: const Color(0xFFE0E0E0),
+        titleTextStyle: getFont(locale, 
+          fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white,
         ),
-        contentTextStyle: GoogleFonts.inter(
-          fontSize: 14, color: const Color(0xFFBDBDBD), height: 1.5,
+        contentTextStyle: getFont(locale, 
+          fontSize: 14, color: const Color(0xFF8B94A5), height: 1.5,
         ),
       ),
 
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: const Color(0xFF424242),
-        contentTextStyle: GoogleFonts.inter(fontSize: 14, color: Colors.white),
+        backgroundColor: const Color(0xFF1E232F),
+        contentTextStyle: getFont(locale, fontSize: 14, color: Colors.white),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppColors.neonCyan, width: 1),
+        ),
       ),
 
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return const Color(0xFF0D47A1);
-          return const Color(0xFF757575);
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return const Color(0xFF8B94A5);
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return const Color(0xFF90CAF9);
-          return const Color(0xFF424242);
+          if (states.contains(WidgetState.selected)) return AppColors.neonCyan;
+          return const Color(0xFF161A24);
         }),
       ),
 
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: Color(0xFF90CAF9),
+        color: AppColors.neonCyan,
       ),
 
-      dividerTheme: const DividerThemeData(
-        color: Color(0xFF424242),
+      dividerTheme: DividerThemeData(
+        color: Colors.white.withValues(alpha: 0.1),
         thickness: 1,
       ),
 
       drawerTheme: const DrawerThemeData(
-        backgroundColor: Color(0xFF1E1E1E),
+        backgroundColor: AppColors.cryptoBackground,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
             topRight: Radius.circular(20),
@@ -624,17 +635,17 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: getFont(locale, 
           fontSize: 15,
           fontWeight: FontWeight.w500,
-          color: const Color(0xFFE0E0E0),
+          color: Colors.white,
         ),
-        subtitleTextStyle: GoogleFonts.inter(
+        subtitleTextStyle: getFont(locale, 
           fontSize: 13,
           fontWeight: FontWeight.w400,
-          color: const Color(0xFFBDBDBD),
+          color: const Color(0xFF8B94A5),
         ),
-        iconColor: const Color(0xFFBDBDBD),
+        iconColor: const Color(0xFF8B94A5),
         dense: false,
       ),
     );
@@ -642,95 +653,95 @@ class AppTheme {
 
   // ───────────────────────── Text Theme (Inter) ──────────────────────────
 
-  static TextTheme _buildTextTheme() {
+  static TextTheme _buildTextTheme(String locale) {
 
     return TextTheme(
-      displayLarge: GoogleFonts.inter(
+      displayLarge: getFont(locale, 
         fontSize: 57,
         fontWeight: FontWeight.w400,
         letterSpacing: -0.25,
         color: const Color(0xFF1C1B1F),
       ),
-      displayMedium: GoogleFonts.inter(
+      displayMedium: getFont(locale, 
         fontSize: 45,
         fontWeight: FontWeight.w400,
         color: const Color(0xFF1C1B1F),
       ),
-      displaySmall: GoogleFonts.inter(
+      displaySmall: getFont(locale, 
         fontSize: 36,
         fontWeight: FontWeight.w400,
         color: const Color(0xFF1C1B1F),
       ),
-      headlineLarge: GoogleFonts.inter(
+      headlineLarge: getFont(locale, 
         fontSize: 32,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.5,
         color: const Color(0xFF1C1B1F),
       ),
-      headlineMedium: GoogleFonts.inter(
+      headlineMedium: getFont(locale, 
         fontSize: 28,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.3,
         color: const Color(0xFF1C1B1F),
       ),
-      headlineSmall: GoogleFonts.inter(
+      headlineSmall: getFont(locale, 
         fontSize: 24,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.2,
         color: const Color(0xFF1C1B1F),
       ),
-      titleLarge: GoogleFonts.inter(
+      titleLarge: getFont(locale, 
         fontSize: 22,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.2,
         color: const Color(0xFF1C1B1F),
       ),
-      titleMedium: GoogleFonts.inter(
+      titleMedium: getFont(locale, 
         fontSize: 16,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.15,
         color: const Color(0xFF1C1B1F),
       ),
-      titleSmall: GoogleFonts.inter(
+      titleSmall: getFont(locale, 
         fontSize: 14,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.1,
         color: const Color(0xFF1C1B1F),
       ),
-      bodyLarge: GoogleFonts.inter(
+      bodyLarge: getFont(locale, 
         fontSize: 16,
         fontWeight: FontWeight.w400,
         letterSpacing: 0.15,
         color: const Color(0xFF1C1B1F),
         height: 1.5,
       ),
-      bodyMedium: GoogleFonts.inter(
+      bodyMedium: getFont(locale, 
         fontSize: 14,
         fontWeight: FontWeight.w400,
         letterSpacing: 0.25,
         color: const Color(0xFF1C1B1F),
         height: 1.5,
       ),
-      bodySmall: GoogleFonts.inter(
+      bodySmall: getFont(locale, 
         fontSize: 12,
         fontWeight: FontWeight.w400,
         letterSpacing: 0.4,
         color: const Color(0xFF757575),
         height: 1.4,
       ),
-      labelLarge: GoogleFonts.inter(
+      labelLarge: getFont(locale, 
         fontSize: 14,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.1,
         color: const Color(0xFF1C1B1F),
       ),
-      labelMedium: GoogleFonts.inter(
+      labelMedium: getFont(locale, 
         fontSize: 12,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.5,
         color: const Color(0xFF757575),
       ),
-      labelSmall: GoogleFonts.inter(
+      labelSmall: getFont(locale, 
         fontSize: 11,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.5,

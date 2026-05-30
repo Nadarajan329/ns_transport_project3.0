@@ -83,4 +83,9 @@ abstract final class AppColors {
         return textSecondary;
     }
   }
+
+  // ─── Crypto Theme (Dark Mode) ─────────────────────────────────────
+  static const Color cryptoBackground = Color(0xFF0B0E14);
+  static const Color cryptoCard = Color(0xFF1E232F);
+  static const Color neonCyan = Color(0xFF00E5FF);
 }

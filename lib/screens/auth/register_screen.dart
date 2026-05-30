@@ -73,8 +73,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
     });
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Create Account'),
         backgroundColor: Colors.transparent,
@@ -95,7 +97,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -104,7 +106,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 16,
-                    color: AppColors.textSecondary,
+                    color: isDark ? Colors.grey.shade400 : AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -202,14 +204,16 @@ class _RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : (isDark ? const Color(0xFF2C2C2C) : Colors.white),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey.shade300,
+            color: isSelected ? AppColors.primary : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
             width: 2,
           ),
           borderRadius: BorderRadius.circular(12),
@@ -219,7 +223,7 @@ class _RoleCard extends StatelessWidget {
             Icon(
               icon,
               size: 32,
-              color: isSelected ? AppColors.primary : Colors.grey.shade600,
+              color: isSelected ? AppColors.primary : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
             ),
             const SizedBox(height: 12),
             Text(
@@ -227,7 +231,7 @@ class _RoleCard extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? AppColors.primary : Colors.grey.shade700,
+                color: isSelected ? AppColors.primary : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
               ),
             ),
           ],

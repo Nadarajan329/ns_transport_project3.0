@@ -5,6 +5,11 @@ import 'package:ns_transport/providers/salary_provider.dart';
 import 'package:ns_transport/providers/trip_provider.dart';
 import 'package:ns_transport/models/salary_model.dart';
 import 'package:ns_transport/routes/app_routes.dart';
+import 'package:ns_transport/providers/advance_provider.dart';
+import 'package:ns_transport/models/advance_history_model.dart';
+import 'package:ns_transport/providers/locale_provider.dart';
+import 'package:ns_transport/core/localization/app_translations.dart';
+import 'package:ns_transport/core/theme/app_theme.dart';
 
 class EmployeeDetailScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> driver;
@@ -19,6 +24,10 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
+  
+  final _advanceFormKey = GlobalKey<FormState>();
+  final _advanceAmountController = TextEditingController();
+  final _advanceDescController = TextEditingController();
   
   String _selectedDay = DateTime.now().day.toString();
   String _selectedMonth = DateTime.now().month.toString();
@@ -41,6 +50,8 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
   void dispose() {
     _tabController.dispose();
     _amountController.dispose();
+    _advanceAmountController.dispose();
+    _advanceDescController.dispose();
     super.dispose();
   }
 
@@ -70,12 +81,37 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
       
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Payment recorded successfully')),
+        SnackBar(content: Text(AppTranslations.get('payment_success', ref.read(localeProvider)))),
       );
       _amountController.clear();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to record payment: $e')),
+        SnackBar(content: Text('${AppTranslations.get('failed_payment', ref.read(localeProvider))}: $e')),
+      );
+    }
+  }
+
+  void _recordAdvance() async {
+    if (!_advanceFormKey.currentState!.validate()) return;
+
+    final amount = double.tryParse(_advanceAmountController.text) ?? 0;
+    if (amount <= 0) return;
+
+    final driverId = widget.driver['id']?.toString() ?? '';
+    final description = _advanceDescController.text.isEmpty ? 'Advance Payment' : _advanceDescController.text;
+
+    try {
+      await ref.read(advanceHistoryProvider(driverId).notifier).giveAdvance(amount, description);
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppTranslations.get('rent_advance_success', ref.read(localeProvider)))),
+      );
+      _advanceAmountController.clear();
+      _advanceDescController.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${AppTranslations.get('failed_advance', ref.read(localeProvider))}: $e')),
       );
     }
   }
@@ -86,13 +122,14 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
     final driverEmail = widget.driver['email'] ?? '';
     final driverPhone = widget.driver['phone'] ?? '';
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final locale = ref.watch(localeProvider);
 
     return Scaffold(
       backgroundColor: isDark ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: Text(
           driverName,
-          style: const TextStyle(color: Colors.white, inherit: false, fontSize: 20, fontWeight: FontWeight.bold),
+          style: AppTheme.getFont(locale, color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xFF1976D2),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -166,8 +203,8 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'Active',
-                              style: GoogleFonts.inter(
+                              AppTranslations.get('active', locale),
+                              style: AppTheme.getFont(locale,
                                 color: const Color(0xFF2E7D32),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
@@ -213,19 +250,19 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
             labelColor: const Color(0xFF1976D2),
             unselectedLabelColor: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
             indicatorColor: const Color(0xFF1976D2),
-            tabs: const [
-              Tab(icon: Icon(Icons.person), text: 'Profile Info'),
-              Tab(icon: Icon(Icons.attach_money), text: 'Salary'),
-              Tab(icon: Icon(Icons.route), text: 'Trips'),
+            tabs: [
+              Tab(icon: const Icon(Icons.person), text: AppTranslations.get('profile_info', locale)),
+              Tab(icon: const Icon(Icons.attach_money), text: AppTranslations.get('salary', locale)),
+              Tab(icon: const Icon(Icons.route), text: AppTranslations.get('trips', locale)),
             ],
           ),
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildProfileTab(isDark),
-                _buildSalaryTab(isDark),
-                _buildTripsTab(isDark),
+                _buildProfileTab(isDark, locale),
+                _buildSalaryTab(isDark, locale),
+                _buildTripsTab(isDark, locale),
               ],
             ),
           ),
@@ -234,20 +271,22 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
     );
   }
 
-  Widget _buildSalaryTab(bool isDark) {
+  Widget _buildSalaryTab(bool isDark, String locale) {
+    final driverId = widget.driver['id']?.toString() ?? '';
     final salariesAsync = ref.watch(salaryProvider);
     final tripsAsync = ref.watch(tripProvider);
-    final driverId = widget.driver['id']?.toString() ?? '';
+    final advanceAsync = ref.watch(advanceHistoryProvider(driverId));
 
-    if (salariesAsync.isLoading || tripsAsync.isLoading) {
+    if (salariesAsync.isLoading || tripsAsync.isLoading || advanceAsync.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (salariesAsync.hasError || tripsAsync.hasError) {
-      return Center(child: Text('Error: ${salariesAsync.error ?? tripsAsync.error}'));
+    if (salariesAsync.hasError || tripsAsync.hasError || advanceAsync.hasError) {
+      return Center(child: Text('Error loading data'));
     }
 
     final salaries = salariesAsync.value ?? [];
     final trips = tripsAsync.value ?? [];
+    final advanceHistory = advanceAsync.value ?? [];
 
     final driverSalaries = salaries.where((s) => s.driverId == driverId).toList();
     final driverTrips = trips.where((t) => t.driverId == driverId).toList();
@@ -263,6 +302,8 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
       totalPaid += s.paidAmount;
     }
     double balance = totalSalary - totalPaid;
+    
+    double advanceBalance = advanceHistory.fold(0.0, (sum, item) => item.type == 'given_by_owner' ? sum + item.amount : sum - item.amount);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -274,7 +315,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                 children: [
                   Expanded(
                     child: _buildAmountCard(
-                      'Total Salary',
+                      AppTranslations.get('total_salary', locale),
                       totalSalary,
                       const Color(0xFFE3EDF7),
                       const Color(0xFF1976D2),
@@ -285,7 +326,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                   const SizedBox(width: 16),
                   Expanded(
                     child: _buildAmountCard(
-                      'Paid Amount',
+                      AppTranslations.get('paid_amount', locale),
                       totalPaid,
                       const Color(0xFFE8F5E9),
                       const Color(0xFF2E7D32),
@@ -296,37 +337,75 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                 ],
               ),
               const SizedBox(height: 16),
-              _buildAmountCard(
-                'Balance',
-                balance.abs(),
-                balance > 0 ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
-                balance > 0 ? const Color(0xFFC62828) : const Color(0xFF2E7D32),
-                Icons.balance,
-                isDark,
-                fullWidth: true,
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildAmountCard(
+                      AppTranslations.get('salary_balance', locale),
+                      balance.abs(),
+                      balance > 0 ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
+                      balance > 0 ? const Color(0xFFC62828) : const Color(0xFF2E7D32),
+                      Icons.balance,
+                      isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildAmountCard(
+                      AppTranslations.get('advance_balance', locale),
+                      advanceBalance,
+                      const Color(0xFFFFF3E0),
+                      const Color(0xFFEF6C00),
+                      Icons.money_off,
+                      isDark,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
               Text(
-                'Add Payment',
-                style: GoogleFonts.inter(
+                AppTranslations.get('add_payment', locale),
+                style: AppTheme.getFont(locale,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
               const SizedBox(height: 12),
-              _buildAddPaymentForm(isDark),
+              _buildAddPaymentForm(isDark, locale),
               const SizedBox(height: 32),
               Text(
-                'Payment History',
-                style: GoogleFonts.inter(
+                AppTranslations.get('give_advance', locale),
+                style: AppTheme.getFont(locale,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
               const SizedBox(height: 12),
-              _buildPaymentHistory(driverSalaries, isDark),
+              _buildAddAdvanceForm(isDark, locale),
+              const SizedBox(height: 32),
+              Text(
+                AppTranslations.get('payment_history', locale),
+                style: AppTheme.getFont(locale,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildPaymentHistory(driverSalaries, isDark, locale),
+              const SizedBox(height: 32),
+              Text(
+                AppTranslations.get('advance_history', locale),
+                style: AppTheme.getFont(locale,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildAdvanceHistory(advanceHistory, isDark, locale),
             ],
           ),
         );
@@ -349,12 +428,14 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
             children: [
               Icon(icon, color: iconColor, size: 20),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: GoogleFonts.inter(
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -373,7 +454,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
     );
   }
 
-  Widget _buildAddPaymentForm(bool isDark) {
+  Widget _buildAddPaymentForm(bool isDark, String locale) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -389,11 +470,11 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               controller: _amountController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Amount Paid',
+                labelText: AppTranslations.get('amount_paid', locale),
                 prefixIcon: const Icon(Icons.attach_money, color: Color(0xFF1976D2)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              validator: (val) => val == null || val.isEmpty ? 'Enter amount' : null,
+              validator: (val) => val == null || val.isEmpty ? AppTranslations.get('required', locale) : null,
             ),
 
             const SizedBox(height: 24),
@@ -403,7 +484,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               child: ElevatedButton.icon(
                 onPressed: _recordPayment,
                 icon: const Icon(Icons.check, color: Colors.white),
-                label: const Text('Record Payment', style: TextStyle(color: Colors.white, fontSize: 16)),
+                label: Text(AppTranslations.get('record_payment', locale), style: AppTheme.getFont(locale, color: Colors.white, fontSize: 16)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1976D2),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -416,7 +497,58 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
     );
   }
 
-  Widget _buildPaymentHistory(List<SalaryModel> salaries, bool isDark) {
+  Widget _buildAddAdvanceForm(bool isDark, String locale) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Theme.of(context).cardTheme.color : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
+      ),
+      child: Form(
+        key: _advanceFormKey,
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _advanceAmountController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: AppTranslations.get('amount', locale),
+                prefixIcon: const Icon(Icons.money, color: Color(0xFFEF6C00)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              validator: (val) => val == null || val.isEmpty ? AppTranslations.get('required', locale) : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _advanceDescController,
+              decoration: InputDecoration(
+                labelText: AppTranslations.get('description_optional', locale),
+                prefixIcon: const Icon(Icons.description, color: Colors.grey),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: _recordAdvance,
+                icon: const Icon(Icons.check, color: Colors.white),
+                label: Text(AppTranslations.get('give_advance', locale), style: AppTheme.getFont(locale, color: Colors.white, fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEF6C00),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentHistory(List<SalaryModel> salaries, bool isDark, String locale) {
     if (salaries.isEmpty) {
       return Container(
         width: double.infinity,
@@ -430,7 +562,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
           children: [
             Icon(Icons.receipt_long, size: 48, color: Colors.grey.shade400),
             const SizedBox(height: 16),
-            Text('No payment history found', style: TextStyle(color: Colors.grey.shade500)),
+            Text(AppTranslations.get('no_payment_history', locale), style: AppTheme.getFont(locale, color: Colors.grey.shade500)),
           ],
         ),
       );
@@ -478,7 +610,66 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
     );
   }
 
-  Widget _buildTripsTab(bool isDark) {
+  Widget _buildAdvanceHistory(List<AdvanceHistoryModel> history, bool isDark, String locale) {
+    if (history.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: isDark ? Theme.of(context).cardTheme.color : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.history, size: 48, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            Text(AppTranslations.get('no_advance_history', locale), style: AppTheme.getFont(locale, color: Colors.grey.shade500)),
+          ],
+        ),
+      );
+    }
+
+    String formatDateTime(DateTime dt) {
+      String p(int n) => n.toString().padLeft(2, '0');
+      String ampm = dt.hour >= 12 ? 'PM' : 'AM';
+      int h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+      return '${p(dt.day)}/${p(dt.month)}/${dt.year} ${p(h)}:${p(dt.minute)} $ampm';
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: history.length,
+      itemBuilder: (context, index) {
+        final item = history[index];
+        final isGiven = item.type == 'given_by_owner';
+        
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: isGiven ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
+              child: Icon(isGiven ? Icons.arrow_downward : Icons.arrow_upward, color: isGiven ? const Color(0xFF2E7D32) : const Color(0xFFC62828)),
+            ),
+            title: Text(item.description ?? (isGiven ? AppTranslations.get('advance_given', locale) : AppTranslations.get('expense_deducted', locale)), style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
+            subtitle: item.createdAt != null ? Text(formatDateTime(item.createdAt!.toLocal()), style: AppTheme.getFont(locale)) : null,
+            trailing: Text(
+              '${isGiven ? '+' : '-'}${item.amount.toStringAsFixed(2)}',
+              style: AppTheme.getFont(locale,
+                color: isGiven ? const Color(0xFF2E7D32) : const Color(0xFFC62828), 
+                fontWeight: FontWeight.bold, 
+                fontSize: 16
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTripsTab(bool isDark, String locale) {
     final tripsAsync = ref.watch(tripProvider);
     final driverId = widget.driver['id']?.toString() ?? '';
 
@@ -510,7 +701,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                 children: [
                   Expanded(
                     child: _buildAmountCard(
-                      'Total Trips',
+                      AppTranslations.get('total_trips_owner', locale),
                       totalTrips.toDouble(),
                       const Color(0xFFE3EDF7),
                       const Color(0xFF1976D2),
@@ -522,7 +713,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                   const SizedBox(width: 16),
                   Expanded(
                     child: _buildAmountCard(
-                      'Total Rent',
+                      AppTranslations.get('total_rent', locale),
                       totalRent,
                       const Color(0xFFF3E5F5),
                       const Color(0xFF8E24AA),
@@ -534,7 +725,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               ),
               const SizedBox(height: 16),
               _buildAmountCard(
-                'Total Salary (15%)',
+                AppTranslations.get('total_salary_15', locale),
                 totalSalary,
                 const Color(0xFFFFF3E0),
                 const Color(0xFFF57C00),
@@ -544,8 +735,8 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               ),
               const SizedBox(height: 32),
               Text(
-                'Filter Trips',
-                style: GoogleFonts.inter(
+                AppTranslations.get('filter_trips', locale),
+                style: AppTheme.getFont(locale,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : Colors.black87,
@@ -556,13 +747,14 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       value: _selectedTripMonth,
                       decoration: InputDecoration(
-                        labelText: 'Month',
+                        labelText: AppTranslations.get('month', locale),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       items: [
-                        const DropdownMenuItem(value: 'All Months', child: Text('All Months')),
+                        DropdownMenuItem(value: 'All Months', child: Text(AppTranslations.get('all_months', locale))),
                         ...List.generate(12, (index) => DropdownMenuItem(value: (index + 1).toString(), child: Text('${index + 1}')))
                       ],
                       onChanged: (val) {
@@ -573,13 +765,14 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                   const SizedBox(width: 16),
                   Expanded(
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       value: _selectedTripYear,
                       decoration: InputDecoration(
-                        labelText: 'Year',
+                        labelText: AppTranslations.get('year', locale),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       items: [
-                        const DropdownMenuItem(value: 'All Years', child: Text('All Years')),
+                        DropdownMenuItem(value: 'All Years', child: Text(AppTranslations.get('all_years', locale))),
                         ...List.generate(10, (index) {
                           final year = DateTime.now().year - 5 + index;
                           return DropdownMenuItem(value: year.toString(), child: Text('$year'));
@@ -594,8 +787,8 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               ),
               const SizedBox(height: 32),
               Text(
-                'Trip History',
-                style: GoogleFonts.inter(
+                AppTranslations.get('trip_history', locale),
+                style: AppTheme.getFont(locale,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : Colors.black87,
@@ -606,7 +799,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
-                    child: Text('No trips found', style: TextStyle(color: Colors.grey.shade500)),
+                    child: Text(AppTranslations.get('no_trips_found', locale), style: AppTheme.getFont(locale, color: Colors.grey.shade500)),
                   ),
                 )
               else
@@ -627,9 +820,9 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                           backgroundColor: const Color(0xFFE3EDF7),
                           child: const Icon(Icons.local_shipping, color: Color(0xFF1976D2)),
                         ),
-                        title: Text('${trip.fromLocation} to ${trip.toLocation}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('Date: ${trip.tripDate.toString().split(' ')[0]} • Status: ${trip.status.toUpperCase()}'),
-                        trailing: Text('₹${trip.rentAmount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Text('${trip.fromLocation} to ${trip.toLocation}', style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
+                        subtitle: Text('${AppTranslations.get('date', locale)}: ${trip.tripDate.toString().split(' ')[0]} • ${AppTranslations.get('status', locale)}: ${trip.status.toUpperCase()}', style: AppTheme.getFont(locale)),
+                        trailing: Text('₹${trip.rentAmount.toStringAsFixed(0)}', style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
                       ),
                     );
                   },
@@ -643,7 +836,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
     );
   }
 
-  Widget _buildProfileTab(bool isDark) {
+  Widget _buildProfileTab(bool isDark, String locale) {
     final driver = widget.driver;
 
     final fatherName = driver['father_name'] as String?;
@@ -656,7 +849,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
     final aadharUrl = driver['aadhar_card_url'] as String?;
     final dlUrl = driver['driving_license_url'] as String?;
 
-    String ageStr = 'Not Provided';
+    String ageStr = AppTranslations.get('not_provided', locale);
     if (dobStr != null && dobStr.isNotEmpty) {
       try {
         final dob = DateTime.parse(dobStr);
@@ -685,7 +878,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
           children: [
             Text(
               title,
-              style: GoogleFonts.inter(
+              style: AppTheme.getFont(locale,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : Colors.black87,
@@ -708,7 +901,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               width: 120,
               child: Text(
                 label,
-                style: GoogleFonts.inter(
+                style: AppTheme.getFont(locale,
                   color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                   fontWeight: FontWeight.w500,
                 ),
@@ -716,8 +909,8 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
             ),
             Expanded(
               child: Text(
-                value != null && value.isNotEmpty ? value : 'Not Provided',
-                style: GoogleFonts.inter(
+                value != null && value.isNotEmpty ? value : AppTranslations.get('not_provided', locale),
+                style: AppTheme.getFont(locale,
                   color: isDark ? Colors.white : Colors.black87,
                   fontWeight: FontWeight.w500,
                 ),
@@ -734,7 +927,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: AppTheme.getFont(locale,
               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
               fontWeight: FontWeight.w500,
             ),
@@ -767,8 +960,8 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade300, style: BorderStyle.solid),
               ),
-              child: const Center(
-                child: Text('Not Provided'),
+              child: Center(
+                child: Text(AppTranslations.get('not_provided', locale), style: AppTheme.getFont(locale)),
               ),
             ),
           const SizedBox(height: 16),
@@ -781,21 +974,21 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          buildSection('Personal Information', [
-            buildRow('Father\'s Name', fatherName),
-            buildRow('Gender', gender),
-            buildRow('Date of Birth', dobStr),
-            buildRow('Age', ageStr),
-            buildRow('Home Address', homeAddress),
+          buildSection(AppTranslations.get('personal_information', locale), [
+            buildRow(AppTranslations.get('fathers_name', locale), fatherName),
+            buildRow(AppTranslations.get('gender', locale), gender),
+            buildRow(AppTranslations.get('date_of_birth', locale), dobStr),
+            buildRow(AppTranslations.get('age', locale), ageStr),
+            buildRow(AppTranslations.get('home_address', locale), homeAddress),
           ]),
-          buildSection('Bank Details', [
-            buildRow('Account Number', accNumber),
-            buildRow('IFSC Code', ifsc),
-            buildRow('Branch Name', branch),
+          buildSection(AppTranslations.get('bank_details', locale), [
+            buildRow(AppTranslations.get('account_number', locale), accNumber),
+            buildRow(AppTranslations.get('ifsc_code', locale), ifsc),
+            buildRow(AppTranslations.get('branch_name', locale), branch),
           ]),
-          buildSection('ID Proofs', [
-            buildImageDoc('Aadhar Card', aadharUrl),
-            buildImageDoc('Driving License', dlUrl),
+          buildSection(AppTranslations.get('id_proofs', locale), [
+            buildImageDoc(AppTranslations.get('aadhar_card', locale), aadharUrl),
+            buildImageDoc(AppTranslations.get('driving_license', locale), dlUrl),
           ]),
         ],
       ),

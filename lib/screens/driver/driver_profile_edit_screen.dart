@@ -5,8 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:ns_transport/providers/auth_provider.dart';
+import 'package:ns_transport/providers/locale_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:ns_transport/core/constants/api_constants.dart';
+import 'package:ns_transport/core/localization/app_translations.dart';
+import 'package:ns_transport/core/theme/app_theme.dart';
 
 class DriverProfileEditScreen extends ConsumerStatefulWidget {
   const DriverProfileEditScreen({super.key});
@@ -156,15 +159,17 @@ class _DriverProfileEditScreenState extends ConsumerState<DriverProfileEditScree
       }).eq('id', userId);
 
       if (mounted) {
+        final locale = ref.read(localeProvider);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully!')),
+          SnackBar(content: Text(AppTranslations.get('profile_updated_success', locale), style: AppTheme.getFont(locale))),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
+        final locale = ref.read(localeProvider);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile: $e')),
+          SnackBar(content: Text('${AppTranslations.get('failed_update_profile', locale)}: $e', style: AppTheme.getFont(locale))),
         );
       }
     } finally {
@@ -189,10 +194,11 @@ class _DriverProfileEditScreenState extends ConsumerState<DriverProfileEditScree
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final locale = ref.watch(localeProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile', style: TextStyle(color: Colors.white, inherit: false)),
+        title: Text(AppTranslations.get('edit_profile', locale), style: AppTheme.getFont(locale, color: Colors.white)),
         backgroundColor: const Color(0xFF1565C0),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -205,31 +211,35 @@ class _DriverProfileEditScreenState extends ConsumerState<DriverProfileEditScree
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionTitle('Personal Information', isDark),
+                    _buildSectionTitle(AppTranslations.get('personal_information', locale), isDark, locale),
                     _buildTextField(
                       controller: _fatherNameController,
-                      label: "Father's Name",
+                      label: AppTranslations.get('fathers_name', locale),
                       icon: Icons.person_outline,
+                      locale: locale,
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _homeAddressController,
-                      label: "Home Address",
+                      label: AppTranslations.get('home_address', locale),
                       icon: Icons.home_outlined,
                       maxLines: 3,
+                      locale: locale,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       value: _gender,
+                      style: AppTheme.getFont(locale, color: isDark ? Colors.white : Colors.black87),
                       decoration: InputDecoration(
-                        labelText: 'Gender',
+                        labelText: AppTranslations.get('gender', locale),
+                        labelStyle: AppTheme.getFont(locale),
                         prefixIcon: const Icon(Icons.people_outline),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'Male', child: Text('Male')),
-                        DropdownMenuItem(value: 'Female', child: Text('Female')),
-                        DropdownMenuItem(value: 'Other', child: Text('Other')),
+                      items: [
+                        DropdownMenuItem(value: 'Male', child: Text(AppTranslations.get('male', locale), style: AppTheme.getFont(locale))),
+                        DropdownMenuItem(value: 'Female', child: Text(AppTranslations.get('female', locale), style: AppTheme.getFont(locale))),
+                        DropdownMenuItem(value: 'Other', child: Text(AppTranslations.get('other_gender', locale), style: AppTheme.getFont(locale))),
                       ],
                       onChanged: (val) => setState(() => _gender = val),
                     ),
@@ -237,40 +247,45 @@ class _DriverProfileEditScreenState extends ConsumerState<DriverProfileEditScree
                     TextFormField(
                       controller: _dobController,
                       readOnly: true,
+                      style: AppTheme.getFont(locale),
                       onTap: () => _selectDate(context),
                       decoration: InputDecoration(
-                        labelText: 'Date of Birth (YYYY-MM-DD)',
+                        labelText: AppTranslations.get('date_of_birth_format', locale),
+                        labelStyle: AppTheme.getFont(locale),
                         prefixIcon: const Icon(Icons.calendar_today),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                     const SizedBox(height: 24),
                     
-                    _buildSectionTitle('Bank Details', isDark),
+                    _buildSectionTitle(AppTranslations.get('bank_details', locale), isDark, locale),
                     _buildTextField(
                       controller: _accNumberController,
-                      label: "Account Number",
+                      label: AppTranslations.get('account_number', locale),
                       icon: Icons.account_balance,
                       keyboardType: TextInputType.number,
+                      locale: locale,
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _ifscController,
-                      label: "IFSC Code",
+                      label: AppTranslations.get('ifsc_code', locale),
                       icon: Icons.code,
+                      locale: locale,
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _branchController,
-                      label: "Branch Name",
+                      label: AppTranslations.get('branch_name', locale),
                       icon: Icons.business,
+                      locale: locale,
                     ),
                     const SizedBox(height: 24),
 
-                    _buildSectionTitle('ID Proofs', isDark),
-                    _buildImagePicker('Aadhar Card', true, _aadharImage, _existingAadharUrl, isDark),
+                    _buildSectionTitle(AppTranslations.get('id_proofs', locale), isDark, locale),
+                    _buildImagePicker(AppTranslations.get('aadhar_card', locale), true, _aadharImage, _existingAadharUrl, isDark, locale),
                     const SizedBox(height: 16),
-                    _buildImagePicker('Driving License', false, _dlImage, _existingDlUrl, isDark),
+                    _buildImagePicker(AppTranslations.get('driving_license', locale), false, _dlImage, _existingDlUrl, isDark, locale),
                     const SizedBox(height: 32),
 
                     SizedBox(
@@ -283,7 +298,7 @@ class _DriverProfileEditScreenState extends ConsumerState<DriverProfileEditScree
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('Save Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        child: Text(AppTranslations.get('save_profile', locale), style: AppTheme.getFont(locale, fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -294,12 +309,12 @@ class _DriverProfileEditScreenState extends ConsumerState<DriverProfileEditScree
     );
   }
 
-  Widget _buildSectionTitle(String title, bool isDark) {
+  Widget _buildSectionTitle(String title, bool isDark, String locale) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16, top: 8),
       child: Text(
         title,
-        style: GoogleFonts.inter(
+        style: AppTheme.getFont(locale,
           fontSize: 18,
           fontWeight: FontWeight.bold,
           color: isDark ? Colors.white : const Color(0xFF1565C0),
@@ -314,24 +329,27 @@ class _DriverProfileEditScreenState extends ConsumerState<DriverProfileEditScree
     required IconData icon,
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
+    required String locale,
   }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
+      style: AppTheme.getFont(locale),
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: AppTheme.getFont(locale),
         prefixIcon: Icon(icon),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
-  Widget _buildImagePicker(String title, bool isAadhar, XFile? currentImage, String? existingUrl, bool isDark) {
+  Widget _buildImagePicker(String title, bool isAadhar, XFile? currentImage, String? existingUrl, bool isDark, String locale) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : Colors.black87)),
+        Text(title, style: AppTheme.getFont(locale, fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : Colors.black87)),
         const SizedBox(height: 8),
         InkWell(
           onTap: () => _pickImage(isAadhar),
@@ -358,7 +376,7 @@ class _DriverProfileEditScreenState extends ConsumerState<DriverProfileEditScree
                         children: [
                           Icon(Icons.add_photo_alternate, size: 48, color: Colors.grey.shade400),
                           const SizedBox(height: 8),
-                          Text('Tap to upload $title', style: TextStyle(color: Colors.grey.shade500)),
+                          Text('${AppTranslations.get('tap_upload', locale)} $title', style: AppTheme.getFont(locale, color: Colors.grey.shade500)),
                         ],
                       ),
           ),

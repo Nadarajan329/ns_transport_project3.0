@@ -8,6 +8,9 @@ import 'package:path/path.dart' as p;
 import 'package:ns_transport/providers/auth_provider.dart';
 import 'package:ns_transport/providers/theme_provider.dart';
 import 'package:ns_transport/widgets/app_drawer.dart';
+import 'package:ns_transport/providers/locale_provider.dart';
+import 'package:ns_transport/core/localization/app_translations.dart';
+import 'package:ns_transport/core/theme/app_theme.dart';
 import 'package:ns_transport/routes/app_routes.dart';
 import 'package:ns_transport/core/constants/api_constants.dart';
 
@@ -59,13 +62,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile picture updated!')),
+          SnackBar(content: Text(AppTranslations.get('profile_updated', ref.read(localeProvider)))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update picture: $e')),
+          SnackBar(content: Text('${AppTranslations.get('failed_update', ref.read(localeProvider))}: $e')),
         );
       }
     } finally {
@@ -89,13 +92,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile picture removed')),
+          SnackBar(content: Text(AppTranslations.get('profile_removed', ref.read(localeProvider)))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to remove picture: $e')),
+          SnackBar(content: Text('${AppTranslations.get('failed_remove', ref.read(localeProvider))}: $e')),
         );
       }
     } finally {
@@ -111,6 +114,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
+        final locale = ref.watch(localeProvider);
         return SafeArea(
           child: SingleChildScrollView(
             child: Column(
@@ -119,8 +123,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   child: Text(
-                    'Profile Photo',
-                    style: GoogleFonts.inter(
+                    AppTranslations.get('profile_photo', locale),
+                    style: AppTheme.getFont(locale,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : Colors.black87,
@@ -132,7 +136,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   backgroundColor: Color(0xFFE8F5E9),
                   child: Icon(Icons.camera_alt, color: Color(0xFF2E7D32)),
                 ),
-                title: const Text('Take a photo'),
+                title: Text(AppTranslations.get('take_photo', locale)),
                 onTap: () {
                   Navigator.pop(context);
                   _updateProfilePicture(ImageSource.camera);
@@ -143,7 +147,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   backgroundColor: Color(0xFFE3EDF7),
                   child: Icon(Icons.photo_library, color: Color(0xFF1565C0)),
                 ),
-                title: const Text('Choose from gallery'),
+                title: Text(AppTranslations.get('choose_gallery', locale)),
                 onTap: () {
                   Navigator.pop(context);
                   _updateProfilePicture(ImageSource.gallery);
@@ -155,7 +159,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     backgroundColor: Color(0xFFF3E5F5),
                     child: Icon(Icons.person, color: Color(0xFF8E24AA)),
                   ),
-                  title: const Text('View photo'),
+                  title: Text(AppTranslations.get('view_photo', locale)),
                   onTap: () {
                     Navigator.pop(context); // close bottom sheet
                     showDialog(
@@ -198,7 +202,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     backgroundColor: Color(0xFFFFEBEE),
                     child: Icon(Icons.delete, color: Color(0xFFC62828)),
                   ),
-                  title: const Text('Remove photo', style: TextStyle(color: Color(0xFFC62828))),
+                  title: Text(AppTranslations.get('remove_photo', locale), style: const TextStyle(color: Color(0xFFC62828))),
                   onTap: () {
                     Navigator.pop(context);
                     _removeProfilePicture();
@@ -217,14 +221,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).value;
+    final locale = ref.watch(localeProvider);
     final primaryColor = const Color(0xFF1565C0);
     final avatarUrl = user?.avatarUrl;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Settings',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white),
+          AppTranslations.get('settings', locale),
+          style: AppTheme.getFont(locale, fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white),
         ),
         backgroundColor: const Color(0xFF1565C0),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -284,8 +289,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user?.name ?? 'Loading name...',
-                            style: GoogleFonts.inter(
+                            user?.name ?? AppTranslations.get('loading_name', locale),
+                            style: AppTheme.getFont(locale,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
@@ -293,8 +298,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            user?.email ?? 'Loading email...',
-                            style: GoogleFonts.inter(
+                            user?.email ?? AppTranslations.get('loading_email', locale),
+                            style: AppTheme.getFont(locale,
                               fontSize: 14,
                               color: Colors.grey.shade600,
                             ),
@@ -307,8 +312,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              user?.role.toUpperCase() ?? 'DRIVER',
-                              style: GoogleFonts.inter(
+                              (user?.role == 'owner' ? AppTranslations.get('owner', locale) : AppTranslations.get('driver', locale)).toUpperCase(),
+                              style: AppTheme.getFont(locale,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                                 color: primaryColor,
@@ -326,8 +331,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             // Section 1: Profile Info
             Text(
-              'Account Information',
-              style: GoogleFonts.inter(
+              AppTranslations.get('account_information', locale),
+              style: AppTheme.getFont(locale,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade700,
@@ -342,7 +347,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (user?.role == 'driver') ...[
                     ListTile(
                       leading: const Icon(Icons.edit_document),
-                      title: const Text('Edit Profile & ID Proofs'),
+                      title: Text(AppTranslations.get('edit_profile_id', locale)),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
                         Navigator.pushNamed(context, AppRoutes.driverProfileEdit);
@@ -352,14 +357,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ],
                   ListTile(
                     leading: const Icon(Icons.phone_outlined),
-                    title: const Text('Phone Number'),
-                    subtitle: Text(user?.phone ?? 'Not set'),
+                    title: Text(AppTranslations.get('phone_number', locale)),
+                    subtitle: Text(user?.phone ?? AppTranslations.get('not_set', locale)),
                     trailing: const Icon(Icons.chevron_right),
                   ),
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.badge_outlined),
-                    title: const Text('Driver ID / Staff ID'),
+                    title: Text(AppTranslations.get('driver_id', locale)),
                     subtitle: Text(user?.id ?? 'N/A'),
                   ),
                 ],
@@ -369,8 +374,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             // Section 2: Preferences
             Text(
-              'Preferences',
-              style: GoogleFonts.inter(
+              AppTranslations.get('preferences', locale),
+              style: AppTheme.getFont(locale,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade700,
@@ -383,12 +388,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Column(
                 children: [
                   SwitchListTile(
-                    title: const Text('Dark Mode'),
+                    title: Text(AppTranslations.get('dark_mode', locale)),
                     value: ref.watch(themeProvider) == ThemeMode.dark,
                     onChanged: (val) {
                       ref.read(themeProvider.notifier).toggleTheme(val);
                     },
                     secondary: const Icon(Icons.dark_mode_outlined),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.language),
+                    title: Text(AppTranslations.get('language', locale)),
+                    trailing: DropdownButton<String>(
+                      value: locale,
+                      underline: const SizedBox(),
+                      items: const [
+                        DropdownMenuItem(value: 'en', child: Text('English')),
+                        DropdownMenuItem(value: 'ta', child: Text('தமிழ்')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          ref.read(localeProvider.notifier).setLocale(val);
+                        }
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -397,8 +420,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             // Section 3: Actions
             Text(
-              'Actions',
-              style: GoogleFonts.inter(
+              AppTranslations.get('actions', locale),
+              style: AppTheme.getFont(locale,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade700,
@@ -412,29 +435,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 children: [
                   ListTile(
                     leading: const Icon(Icons.info_outline),
-                    title: const Text('About NS Transport'),
+                    title: Text(AppTranslations.get('about_ns_transport', locale)),
                     subtitle: const Text('v1.0.0 (Production)'),
                   ),
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.red),
-                    title: const Text('Sign Out'),
+                    title: Text(AppTranslations.get('sign_out', locale)),
                     textColor: Colors.red,
                     onTap: () async {
                       final confirm = await showDialog<bool>(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Sign Out'),
-                          content: const Text('Are you sure you want to sign out?'),
+                          title: Text(AppTranslations.get('sign_out', locale)),
+                          content: Text(AppTranslations.get('sign_out_confirm', locale)),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Cancel'),
+                              child: Text(AppTranslations.get('cancel', locale)),
                             ),
                             ElevatedButton(
                               onPressed: () => Navigator.pop(context, true),
                               style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                              child: const Text('Logout'),
+                              child: Text(AppTranslations.get('logout', locale)),
                             ),
                           ],
                         ),
