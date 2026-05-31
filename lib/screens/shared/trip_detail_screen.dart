@@ -9,6 +9,7 @@ import 'package:ns_transport/providers/trip_provider.dart';
 import 'package:ns_transport/widgets/status_badge.dart';
 import 'package:ns_transport/utils/formatters.dart';
 import 'package:ns_transport/services/pdf_service.dart';
+import 'package:ns_transport/routes/app_routes.dart';
 
 class TripDetailScreen extends ConsumerStatefulWidget {
   final String tripId;
@@ -303,8 +304,8 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
             Text('Financial Summary', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 16),
             _buildFinancialRow('Rent Amount', trip.rentAmount, isPrimary: true),
-            _buildFinancialRow('Loading Expense', -trip.loadingExpense),
-            _buildFinancialRow('Unloading Expense', -trip.unloadingExpense),
+            _buildFinancialRow('Loading Expense', trip.loadingExpense),
+            _buildFinancialRow('Unloading Expense', trip.unloadingExpense),
             if (trip.otherExpenseDetails != null && trip.otherExpenseDetails!.isNotEmpty)
               ...trip.otherExpenseDetails!.map((e) => _buildFinancialRow(
                 e['description']?.toString().isNotEmpty == true ? e['description']! : 'Other Expense', 
@@ -314,10 +315,7 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
               _buildFinancialRow('Other Expense', -trip.otherExpense),
             const Divider(height: 24),
             _buildFinancialRow('Total Expenses', totalExpenses, isBold: true),
-            _buildFinancialRow('Advance Received', -trip.advanceAmount),
-            const Divider(height: 24),
-            _buildFinancialRow('Net Profit', netProfit, isHighlight: true, isProfit: netProfit >= 0),
-            _buildFinancialRow('Outstanding Balance', remainingBalance, isBold: true, isProfit: remainingBalance >= 0),
+
           ],
         ),
       ),
@@ -503,26 +501,32 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => _updateStatus('rejected'),
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.tripForm,
+                      arguments: trip,
+                    );
+                  },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: Colors.red, width: 2),
+                    side: BorderSide(color: Colors.blue.shade700, width: 2),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Reject Report', style: GoogleFonts.inter(color: Colors.red, fontWeight: FontWeight.bold)),
+                  child: Text('Edit', style: GoogleFonts.inter(color: Colors.blue.shade700, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => _updateStatus('approved'),
+                  onPressed: _isActionLoading ? null : () => _downloadPdf(trip),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: Colors.green.shade700,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Approve & Settle', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                  child: Text('PDF Download', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -592,7 +596,7 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
             onPressed: () {
               Navigator.pushNamed(
                 context,
-                '/driver/trip-form',
+                AppRoutes.tripForm,
                 arguments: trip,
               );
             },

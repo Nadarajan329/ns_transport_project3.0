@@ -9,8 +9,7 @@ class PdfService {
     final pdf = pw.Document();
 
     final totalExpenses = trip.loadingExpense + trip.unloadingExpense + trip.otherExpense;
-    final netProfit = trip.rentAmount - totalExpenses;
-    final remainingBalance = trip.rentAmount - trip.advanceAmount - totalExpenses;
+
 
     pdf.addPage(
       pw.Page(
@@ -24,26 +23,42 @@ class PdfService {
                 // Header
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text(
-                          'NS TRANSPORT SYSTEM',
-                          style: pw.TextStyle(
-                            fontSize: 24,
-                            fontWeight: pw.FontWeight.bold,
+                    pw.Expanded(
+                      flex: 2,
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'NS TRANSPORT SYSTEM',
+                            style: pw.TextStyle(
+                              fontSize: 20,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        pw.Text('Official Trip Summary Report', style: const pw.TextStyle(fontSize: 12)),
-                      ],
+                          pw.Text('Official Trip Summary Report', style: const pw.TextStyle(fontSize: 12)),
+                        ],
+                      ),
                     ),
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.end,
-                      children: [
-                        pw.Text('Trip Ref: ${trip.id ?? "N/A"}'),
-                        pw.Text('Date: ${Formatters.formatDate(trip.tripDate)}'),
-                      ],
+                    pw.Expanded(
+                      flex: 1,
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          pw.Text(
+                            'Trip Ref: ${(trip.id != null && trip.id!.length >= 8) ? trip.id!.substring(0, 8).toUpperCase() : (trip.id ?? "N/A")}',
+                            style: const pw.TextStyle(fontSize: 10),
+                            textAlign: pw.TextAlign.right,
+                          ),
+                          pw.SizedBox(height: 4),
+                          pw.Text(
+                            'Date: ${Formatters.formatDate(trip.tripDate)}',
+                            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                            textAlign: pw.TextAlign.right,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -87,20 +102,17 @@ class PdfService {
                 pw.Table(
                   border: pw.TableBorder.all(color: PdfColors.grey300),
                   children: [
-                    _buildPdfTableRow('Rent Revenue', Formatters.formatCurrency(trip.rentAmount)),
-                    _buildPdfTableRow('Loading Expenses', '- ${Formatters.formatCurrency(trip.loadingExpense)}'),
-                    _buildPdfTableRow('Unloading Expenses', '- ${Formatters.formatCurrency(trip.unloadingExpense)}'),
+                    _buildPdfTableRow('Rent Revenue', Formatters.formatCurrency(trip.rentAmount).replaceAll('₹', 'Rs. ')),
+                    _buildPdfTableRow('Loading Expenses', Formatters.formatCurrency(trip.loadingExpense).replaceAll('₹', 'Rs. ')),
+                    _buildPdfTableRow('Unloading Expenses', Formatters.formatCurrency(trip.unloadingExpense).replaceAll('₹', 'Rs. ')),
                     if (trip.otherExpenseDetails != null && trip.otherExpenseDetails!.isNotEmpty)
                       ...trip.otherExpenseDetails!.map((e) => _buildPdfTableRow(
                         e['description']?.toString().isNotEmpty == true ? e['description']! : 'Other Expense', 
-                        '- ${Formatters.formatCurrency((e['amount'] as num).toDouble())}'
+                        Formatters.formatCurrency((e['amount'] as num).toDouble()).replaceAll('₹', 'Rs. ')
                       ))
                     else if (trip.otherExpense > 0)
-                      _buildPdfTableRow('Other Expenses', '- ${Formatters.formatCurrency(trip.otherExpense)}'),
-                    _buildPdfTableRow('Total Trip Expenses', Formatters.formatCurrency(totalExpenses), isBold: true),
-                    _buildPdfTableRow('Advance Paid to Driver', '- ${Formatters.formatCurrency(trip.advanceAmount)}'),
-                    _buildPdfTableRow('Net Profit Margin', Formatters.formatCurrency(netProfit), isBold: true),
-                    _buildPdfTableRow('Outstanding Balance Payable', Formatters.formatCurrency(remainingBalance), isBold: true, highlight: true),
+                      _buildPdfTableRow('Other Expenses', Formatters.formatCurrency(trip.otherExpense).replaceAll('₹', 'Rs. ')),
+                    _buildPdfTableRow('Total Trip Expenses', Formatters.formatCurrency(totalExpenses).replaceAll('₹', 'Rs. '), isBold: true),
                   ],
                 ),
 
