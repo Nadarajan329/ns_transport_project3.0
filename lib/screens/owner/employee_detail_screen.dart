@@ -395,9 +395,9 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                   Expanded(
                     child: _buildAmountCard(
                       AppTranslations.get('advance_balance', locale),
-                      advanceBalance,
-                      const Color(0xFFFFF3E0),
-                      const Color(0xFFEF6C00),
+                      advanceBalance.abs(),
+                      advanceBalance < 0 ? const Color(0xFFFFEBEE) : const Color(0xFFFFF3E0),
+                      advanceBalance < 0 ? const Color(0xFFC62828) : const Color(0xFFEF6C00),
                       Icons.money_off,
                       isDark,
                     ),
@@ -438,27 +438,43 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               const SizedBox(height: 12),
               _buildDeductAdvanceForm(isDark, locale),
               const SizedBox(height: 32),
-              Text(
-                AppTranslations.get('payment_history', locale),
-                style: AppTheme.getFont(locale,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
+              Theme(
+                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  title: Text(
+                    AppTranslations.get('payment_history', locale),
+                    style: AppTheme.getFont(locale,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  tilePadding: EdgeInsets.zero,
+                  children: [
+                    const SizedBox(height: 12),
+                    _buildPaymentHistory(driverSalaries, isDark, locale),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              _buildPaymentHistory(driverSalaries, isDark, locale),
-              const SizedBox(height: 32),
-              Text(
-                AppTranslations.get('advance_history', locale),
-                style: AppTheme.getFont(locale,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
+              const SizedBox(height: 16),
+              Theme(
+                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  title: Text(
+                    AppTranslations.get('advance_history', locale),
+                    style: AppTheme.getFont(locale,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  tilePadding: EdgeInsets.zero,
+                  children: [
+                    const SizedBox(height: 12),
+                    _buildAdvanceHistory(advanceHistory, isDark, locale),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              _buildAdvanceHistory(advanceHistory, isDark, locale),
             ],
           ),
         );
