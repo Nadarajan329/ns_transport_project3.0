@@ -11,6 +11,7 @@ import 'package:ns_transport/widgets/app_drawer.dart';
 import 'package:ns_transport/providers/locale_provider.dart';
 import 'package:ns_transport/core/localization/app_translations.dart';
 import 'package:ns_transport/core/theme/app_theme.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class DriverSalaryScreen extends ConsumerStatefulWidget {
   const DriverSalaryScreen({super.key});
@@ -360,20 +361,27 @@ class _DriverSalaryScreenState extends ConsumerState<DriverSalaryScreen> {
           titleText = 'Month: ${salary.month}/${salary.year}';
         }
 
-        return Card(
+        final isAdvanceDeduction = salary.advanceAmount > 0;
+        final card = Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: Color(0xFFE8F5E9),
-              child: Icon(Icons.payments, color: Color(0xFF2E7D32)),
+            leading: CircleAvatar(
+              backgroundColor: isAdvanceDeduction ? const Color(0xFFE3EDF7) : const Color(0xFFE8F5E9),
+              child: Icon(isAdvanceDeduction ? Icons.money_off : Icons.payments, color: isAdvanceDeduction ? const Color(0xFF1976D2) : const Color(0xFF2E7D32)),
             ),
-            title: Text(titleText, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(isAdvanceDeduction ? AppTranslations.get('advance_deduction', locale) : titleText, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: isAdvanceDeduction ? Text(titleText, style: const TextStyle(fontSize: 12)) : null,
             trailing: Text(
               '+${salary.paidAmount.toStringAsFixed(2)}',
-              style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(color: isAdvanceDeduction ? const Color(0xFF1976D2) : const Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
+        );
+
+        return card.animate(onPlay: (controller) => controller.repeat()).shimmer(
+          duration: 1500.ms, 
+          color: isAdvanceDeduction ? Colors.blue.withOpacity(0.3) : Colors.green.withOpacity(0.15),
         );
       },
     );
@@ -414,7 +422,7 @@ class _DriverSalaryScreenState extends ConsumerState<DriverSalaryScreen> {
         final item = history[index];
         final isGiven = item.type == 'given_by_owner';
         
-        return Card(
+        final card = Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
@@ -433,6 +441,11 @@ class _DriverSalaryScreenState extends ConsumerState<DriverSalaryScreen> {
               ),
             ),
           ),
+        );
+
+        return card.animate(onPlay: (controller) => controller.repeat()).shimmer(
+          duration: 1500.ms,
+          color: isGiven ? Colors.green.withOpacity(0.15) : Colors.red.withOpacity(0.15),
         );
       },
     );

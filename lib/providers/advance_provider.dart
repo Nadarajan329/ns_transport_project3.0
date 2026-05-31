@@ -39,4 +39,17 @@ class AdvanceHistoryNotifier extends StateNotifier<AsyncValue<List<AdvanceHistor
       rethrow;
     }
   }
+
+  Future<void> deductAdvance(double amount, String description) async {
+    try {
+      final newEntry = await _advanceService.deductAdvance(_driverId, amount, description);
+      if (state.hasValue) {
+        state = AsyncValue.data([newEntry, ...state.value!]);
+      } else {
+        state = AsyncValue.data([newEntry]);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

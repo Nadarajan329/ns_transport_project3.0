@@ -126,6 +126,8 @@ class AppTranslations {
       'amount_paid': 'Amount Paid',
       'record_payment': 'Record Payment',
       'give_advance': 'Give Advance',
+      'deduct_advance_from_salary': 'Deduct Advance for Salary',
+      'advance_deduction': 'Advance Deduction',
 
       // Profile & Trips Detail
       'personal_information': 'Personal Information',
@@ -323,6 +325,8 @@ class AppTranslations {
       'amount_paid': 'செலுத்தப்பட்ட தொகை',
       'record_payment': 'கட்டணத்தை பதிவு செய்',
       'give_advance': 'முன்பணம் கொடு',
+      'deduct_advance_from_salary': 'சம்பளத்திலிருந்து முன்பணத்தை கழி',
+      'advance_deduction': 'முன்பணம் கழித்தல்',
 
       // Profile & Trips Detail
       'personal_information': 'தனிப்பட்ட தகவல்கள்',

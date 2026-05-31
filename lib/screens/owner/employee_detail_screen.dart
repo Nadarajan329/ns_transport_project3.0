@@ -10,6 +10,7 @@ import 'package:ns_transport/models/advance_history_model.dart';
 import 'package:ns_transport/providers/locale_provider.dart';
 import 'package:ns_transport/core/localization/app_translations.dart';
 import 'package:ns_transport/core/theme/app_theme.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class EmployeeDetailScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> driver;
@@ -29,6 +30,9 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
   final _advanceAmountController = TextEditingController();
   final _advanceDescController = TextEditingController();
   
+  final _deductAdvanceFormKey = GlobalKey<FormState>();
+  final _deductAdvanceAmountController = TextEditingController();
+
   String _selectedDay = DateTime.now().day.toString();
   String _selectedMonth = DateTime.now().month.toString();
   String _selectedYear = DateTime.now().year.toString();
@@ -52,6 +56,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
     _amountController.dispose();
     _advanceAmountController.dispose();
     _advanceDescController.dispose();
+    _deductAdvanceAmountController.dispose();
     super.dispose();
   }
 
@@ -112,6 +117,43 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${AppTranslations.get('failed_advance', ref.read(localeProvider))}: $e')),
+      );
+    }
+  }
+
+  void _recordAdvanceDeduction() async {
+    if (!_deductAdvanceFormKey.currentState!.validate()) return;
+
+    final amount = double.tryParse(_deductAdvanceAmountController.text) ?? 0;
+    if (amount <= 0) return;
+
+    final day = DateTime.now().day;
+    final month = DateTime.now().month;
+    final year = DateTime.now().year;
+    final driverId = widget.driver['id']?.toString() ?? '';
+
+    try {
+      final salary = SalaryModel(
+        driverId: driverId,
+        totalSalary: 0,
+        paidAmount: amount,
+        advanceAmount: amount, // Used to identify this specific type of transaction in history
+        month: month,
+        year: year,
+        day: day,
+      );
+
+      await ref.read(salaryProvider.notifier).upsertSalary(salary);
+      await ref.read(advanceHistoryProvider(driverId).notifier).deductAdvance(amount, AppTranslations.get('advance_deduction', ref.read(localeProvider)));
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppTranslations.get('payment_success', ref.read(localeProvider)))),
+      );
+      _deductAdvanceAmountController.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${AppTranslations.get('failed_payment', ref.read(localeProvider))}: $e')),
       );
     }
   }
@@ -386,6 +428,17 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               _buildAddAdvanceForm(isDark, locale),
               const SizedBox(height: 32),
               Text(
+                AppTranslations.get('deduct_advance_from_salary', locale),
+                style: AppTheme.getFont(locale,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildDeductAdvanceForm(isDark, locale),
+              const SizedBox(height: 32),
+              Text(
                 AppTranslations.get('payment_history', locale),
                 style: AppTheme.getFont(locale,
                   fontSize: 18,
@@ -548,6 +601,48 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
     );
   }
 
+  Widget _buildDeductAdvanceForm(bool isDark, String locale) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Theme.of(context).cardTheme.color : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
+      ),
+      child: Form(
+        key: _deductAdvanceFormKey,
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _deductAdvanceAmountController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: AppTranslations.get('amount', locale),
+                prefixIcon: const Icon(Icons.money_off, color: Color(0xFF1976D2)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              validator: (val) => val == null || val.isEmpty ? AppTranslations.get('required', locale) : null,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: _recordAdvanceDeduction,
+                icon: const Icon(Icons.check, color: Colors.white),
+                label: Text(AppTranslations.get('deduct_advance_from_salary', locale), style: AppTheme.getFont(locale, color: Colors.white, fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1976D2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPaymentHistory(List<SalaryModel> salaries, bool isDark, String locale) {
     if (salaries.isEmpty) {
       return Container(
@@ -591,20 +686,27 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
           titleText = 'Month: ${salary.month}/${salary.year}';
         }
 
-        return Card(
+        final isAdvanceDeduction = salary.advanceAmount > 0;
+        final card = Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: Color(0xFFE8F5E9),
-              child: Icon(Icons.payments, color: Color(0xFF2E7D32)),
+            leading: CircleAvatar(
+              backgroundColor: isAdvanceDeduction ? const Color(0xFFE3EDF7) : const Color(0xFFE8F5E9),
+              child: Icon(isAdvanceDeduction ? Icons.money_off : Icons.payments, color: isAdvanceDeduction ? const Color(0xFF1976D2) : const Color(0xFF2E7D32)),
             ),
-            title: Text(titleText, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(isAdvanceDeduction ? AppTranslations.get('advance_deduction', locale) : titleText, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: isAdvanceDeduction ? Text(titleText, style: const TextStyle(fontSize: 12)) : null,
             trailing: Text(
               '+${salary.paidAmount.toStringAsFixed(2)}',
-              style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(color: isAdvanceDeduction ? const Color(0xFF1976D2) : const Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
+        );
+
+        return card.animate(onPlay: (controller) => controller.repeat()).shimmer(
+          duration: 1500.ms, 
+          color: isAdvanceDeduction ? Colors.blue.withOpacity(0.3) : Colors.green.withOpacity(0.15),
         );
       },
     );
@@ -645,7 +747,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
         final item = history[index];
         final isGiven = item.type == 'given_by_owner';
         
-        return Card(
+        final card = Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
@@ -664,6 +766,11 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               ),
             ),
           ),
+        );
+
+        return card.animate(onPlay: (controller) => controller.repeat()).shimmer(
+          duration: 1500.ms,
+          color: isGiven ? Colors.green.withOpacity(0.15) : Colors.red.withOpacity(0.15),
         );
       },
     );

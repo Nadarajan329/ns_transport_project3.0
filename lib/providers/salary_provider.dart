@@ -43,7 +43,7 @@ class SalaryNotifier extends StateNotifier<AsyncValue<List<SalaryModel>>> {
           newList[index] = updatedSalary;
           state = AsyncValue.data(newList);
         } else {
-          state = AsyncValue.data([...existingSalaries, updatedSalary]);
+          state = AsyncValue.data([updatedSalary, ...existingSalaries]);
         }
       }
     } catch (e) {

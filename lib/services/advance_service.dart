@@ -51,4 +51,33 @@ class AdvanceService {
       throw ServerFailure(message: 'Failed to give advance: $e');
     }
   }
+
+  Future<AdvanceHistoryModel> deductAdvance(String driverId, double amount, String description) async {
+    try {
+      // 1. Insert into advance_history as a deduction
+      final historyResponse = await _supabase
+          .from('advance_history')
+          .insert({
+            'driver_id': driverId,
+            'amount': amount,
+            'type': 'expense_adjustment', // Changed from deducted_for_salary to satisfy DB check constraint
+            'description': description,
+          })
+          .select()
+          .single();
+          
+      // 2. Update advance_balance in users table
+      final userRes = await _supabase.from('users').select('advance_balance').eq('id', driverId).single();
+      double currentBalance = (userRes['advance_balance'] as num?)?.toDouble() ?? 0.0;
+      
+      await _supabase
+          .from('users')
+          .update({'advance_balance': currentBalance - amount})
+          .eq('id', driverId);
+
+      return AdvanceHistoryModel.fromJson(historyResponse);
+    } catch (e) {
+      throw ServerFailure(message: 'Failed to deduct advance: $e');
+    }
+  }
 }

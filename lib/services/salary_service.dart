@@ -13,7 +13,8 @@ class SalaryService {
           .select()
           .eq('driver_id', driverId)
           .order('year', ascending: false)
-          .order('month', ascending: false);
+          .order('month', ascending: false)
+          .order('created_at', ascending: false);
       
       return response.map((json) => SalaryModel.fromJson(json)).toList();
     } catch (e) {
@@ -27,7 +28,8 @@ class SalaryService {
           .from('salaries')
           .select()
           .order('year', ascending: false)
-          .order('month', ascending: false);
+          .order('month', ascending: false)
+          .order('created_at', ascending: false);
       
       return response.map((json) => SalaryModel.fromJson(json)).toList();
     } catch (e) {
