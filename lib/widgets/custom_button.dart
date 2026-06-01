@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:ns_transport/core/constants/app_colors.dart';
 class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final bool isLoading;
   final bool isOutlined;
+  final bool isGradient;
   final IconData? icon;
 
   const CustomButton({
@@ -14,12 +15,13 @@ class CustomButton extends StatelessWidget {
     this.onPressed,
     this.isLoading = false,
     this.isOutlined = false,
+    this.isGradient = false,
     this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFF1565C0); // Primary brand color
+    final primaryColor = AppColors.primary; // Primary brand color
 
     final buttonStyle = isOutlined
         ? OutlinedButton.styleFrom(
@@ -76,6 +78,38 @@ class CustomButton extends StatelessWidget {
         onPressed: isLoading ? null : onPressed,
         style: buttonStyle,
         child: child,
+      );
+    }
+
+    if (isGradient) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF9800), Color(0xFF2196F3)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ElevatedButton(
+          onPressed: isLoading ? null : onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: child,
+        ),
       );
     }
 

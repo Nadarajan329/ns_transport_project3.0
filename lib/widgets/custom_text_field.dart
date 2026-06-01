@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:ns_transport/core/constants/app_colors.dart';
 class CustomTextField extends StatefulWidget {
   final TextEditingController? controller;
   final String label;
@@ -11,6 +11,7 @@ class CustomTextField extends StatefulWidget {
   final IconData? prefixIcon;
   final Widget? suffixIcon;
   final void Function(String)? onChanged;
+  final bool isGlassmorphic;
 
   const CustomTextField({
     super.key,
@@ -23,6 +24,7 @@ class CustomTextField extends StatefulWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.onChanged,
+    this.isGlassmorphic = false,
   });
 
   @override
@@ -40,8 +42,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFF1565C0);
-    
+    final primaryColor = AppColors.primary;    
     final borderStyle = OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
       borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
@@ -62,7 +63,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         return IconButton(
           icon: Icon(
             _obscureText ? Icons.visibility_off : Icons.visibility,
-            color: Colors.grey.shade600,
+            color: widget.isGlassmorphic ? Colors.white70 : Colors.grey.shade600,
           ),
           onPressed: () {
             setState(() {
@@ -82,23 +83,38 @@ class _CustomTextFieldState extends State<CustomTextField> {
       onChanged: widget.onChanged,
       style: GoogleFonts.inter(
         fontSize: 16,
-        color: Colors.black87,
+        color: widget.isGlassmorphic ? Colors.white : Colors.black87,
       ),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
-        labelStyle: GoogleFonts.inter(color: Colors.grey.shade700),
-        hintStyle: GoogleFonts.inter(color: Colors.grey.shade400),
+        labelStyle: GoogleFonts.inter(color: widget.isGlassmorphic ? Colors.white70 : Colors.grey.shade700),
+        hintStyle: GoogleFonts.inter(color: widget.isGlassmorphic ? Colors.white54 : Colors.grey.shade400),
         prefixIcon: widget.prefixIcon != null
-            ? Icon(widget.prefixIcon, color: Colors.grey.shade600)
+            ? Icon(widget.prefixIcon, color: widget.isGlassmorphic ? Colors.white70 : Colors.grey.shade600)
             : null,
         suffixIcon: buildSuffixIcon(),
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: widget.isGlassmorphic ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade50,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: borderStyle,
-        enabledBorder: borderStyle,
-        focusedBorder: focusedBorderStyle,
+        border: widget.isGlassmorphic
+            ? OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+              )
+            : borderStyle,
+        enabledBorder: widget.isGlassmorphic
+            ? OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+              )
+            : borderStyle,
+        focusedBorder: widget.isGlassmorphic
+            ? OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.white, width: 2),
+              )
+            : focusedBorderStyle,
         errorBorder: errorBorderStyle,
         focusedErrorBorder: errorBorderStyle,
       ),

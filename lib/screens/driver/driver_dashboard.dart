@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:ns_transport/widgets/gradient_text.dart';
 import 'package:ns_transport/providers/auth_provider.dart';
 import 'package:ns_transport/providers/trip_provider.dart';
+import 'package:ns_transport/providers/salary_provider.dart';
 import 'package:ns_transport/providers/locale_provider.dart';
 import 'package:ns_transport/core/localization/app_translations.dart';
 import 'package:ns_transport/core/theme/app_theme.dart';
@@ -15,6 +16,7 @@ import 'package:ns_transport/widgets/empty_state.dart';
 import 'package:ns_transport/widgets/status_badge.dart';
 import 'package:ns_transport/utils/formatters.dart';
 import 'package:ns_transport/services/location_service.dart';
+import 'package:ns_transport/widgets/notification_bell.dart';
 
 class DriverDashboard extends ConsumerStatefulWidget {
   const DriverDashboard({super.key});
@@ -39,6 +41,7 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with TickerPr
     )..repeat();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(tripProvider.notifier).loadTrips();
+      ref.read(salaryProvider.notifier).loadSalaries();
       _startLocationTracking();
     });
   }
@@ -62,12 +65,15 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with TickerPr
   }
 
   Future<void> _refresh() async {
-    await ref.read(tripProvider.notifier).loadTrips();
+    await Future.wait([
+      ref.read(tripProvider.notifier).loadTrips(),
+      ref.read(salaryProvider.notifier).loadSalaries(),
+    ]);
   }
 
-  @override
   Widget build(BuildContext context) {
     final tripState = ref.watch(tripProvider);
+    final salaryState = ref.watch(salaryProvider);
     final user = ref.watch(authProvider).value;
     final locale = ref.watch(localeProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -85,6 +91,7 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with TickerPr
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         actions: [
+          const NotificationBell(),
           Tooltip(
             message: _locationEnabled ? 'Live location active' : 'Location off — tap to enable',
             child: IconButton(
@@ -138,9 +145,8 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with TickerPr
             // Statistics calculations
             final totalTrips = filteredTrips.length;
             final pendingApprovals = filteredTrips.where((t) => t.status == 'submitted').length;
-            final double totalRent = filteredTrips
-                .where((t) => t.status == 'approved')
-                .fold(0.0, (sum, item) => sum + item.rentAmount);
+            
+            final double totalDriverSalary = salaryState.value?.fold(0.0, (sum, item) => sum! + item.totalSalary) ?? 0.0;
 
             return NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -252,7 +258,7 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with TickerPr
                                             ),
                                             _buildStatItem(
                                               AppTranslations.get('earnings', locale),
-                                              Formatters.formatCurrency(totalRent, compact: true),
+                                              Formatters.formatCurrency(totalDriverSalary, compact: true),
                                               Icons.account_balance_wallet_outlined,
                                               isDark,
                                               locale,

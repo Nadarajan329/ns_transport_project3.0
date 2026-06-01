@@ -2,11 +2,12 @@
 
 NS Transport 3.0 is a comprehensive transport management system built with Flutter and Supabase. The application is designed to streamline logistics and fleet operations by providing dedicated modules for both Vehicle Owners and Drivers. It aims to improve transparency, track trips, manage salaries, and handle document storage efficiently.
 
-## 🎉 Recent Updates (v3.0.1)
+## 🎉 Recent Updates (v3.0.2)
+* **Auth UI Overhaul:** Completely redesigned the Login and Registration pages to a premium, modern light theme featuring clean white cards, subtle drop shadows, and solid blue interactive elements.
+* **Native Logo Integration:** Replaced the static image logo with a natively rendered, high-resolution typographic logo (`CustomLogo`) that supports transparent backgrounds and flawless scaling on all devices.
+* **Premium Animations:** Added micro-interactions, shimmer effects, and smooth transitions to improve the initial user experience during authentication.
 * **Full Tamil Localization:** Fully integrated dynamic Tamil language translation using `flutter_localizations` and custom dictionaries across all modules, including native Flutter widgets.
-* **Premium UI/UX:** Applied modern typography (Outfit/Meera Inimai) and resolved text overflow issues across Salary and Trip dashboards.
 * **Navigation Polish:** Transitioned to native `MaterialPageRoute` and optimized Drawer routing to eliminate visual glitches and jarring screen transitions.
-* **Authentication Stability:** Fixed race conditions during account creation, ensuring instantaneous dashboard access upon successful database insertion.
 
 ## 🚀 Full Project Explanation
 

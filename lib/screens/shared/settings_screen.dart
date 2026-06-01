@@ -464,7 +464,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       );
 
                       if (confirm == true) {
+                        final nav = Navigator.of(context);
                         await ref.read(authProvider.notifier).signOut();
+                        nav.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
                       }
                     },
                   ),

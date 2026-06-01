@@ -270,12 +270,16 @@ class _DriverSalaryScreenState extends ConsumerState<DriverSalaryScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            isInt ? amount.toInt().toString() : amount.toStringAsFixed(2),
-            style: GoogleFonts.inter(
-              color: iconColor,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              isInt ? amount.toInt().toString() : amount.toStringAsFixed(2),
+              style: GoogleFonts.inter(
+                color: iconColor,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],

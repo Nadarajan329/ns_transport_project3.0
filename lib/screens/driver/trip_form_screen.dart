@@ -188,7 +188,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
       final trip = TripModel(
         id: isEditing ? widget.existingTrip!.id : null,
-        driverId: user.id,
+        driverId: isEditing ? widget.existingTrip!.driverId : user.id,
         vehicleNumber: _vehicleNumberController.text,
         tripDate: _selectedDate,
         fromLocation: _fromLocationController.text,
@@ -200,7 +200,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         unloadingExpense: double.tryParse(_unloadingExpenseController.text) ?? 0.0,
         otherExpense: otherExpenseSum,
         otherExpenseDetails: otherExpenseDetailsList.isEmpty ? null : otherExpenseDetailsList,
-        advanceAmount: 0.0,
+        advanceAmount: isEditing ? widget.existingTrip!.advanceAmount : 0.0,
         notes: _notesController.text.isEmpty ? null : _notesController.text,
         status: status,
         billImages: finalBillUrls.isEmpty ? null : finalBillUrls,

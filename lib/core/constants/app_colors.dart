@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 /// blue palette suitable for a transport management system.
 abstract final class AppColors {
   // ─── Primary Palette ───────────────────────────────────────────────
-  static const Color primary = Color(0xFF1565C0); // Blue 800
-  static const Color primaryLight = Color(0xFF42A5F5); // Blue 400
-  static const Color primaryDark = Color(0xFF0D47A1); // Blue 900
+  static const Color primary = Color(0xFF0055F5); // Bright Blue
+  static const Color primaryLight = Color(0xFF42A5F5); // Light Blue
+  static const Color primaryDark = Color(0xFF041E42); // Deep Blue
 
   // ─── Surface & Background ─────────────────────────────────────────
   static const Color surface = Color(0xFFF8FAFF);
@@ -37,8 +37,8 @@ abstract final class AppColors {
   static const Color shadow = Color(0x1A1565C0);
 
   // ─── Gradient ─────────────────────────────────────────────────────
-  static const Color gradientStart = Color(0xFF1565C0);
-  static const Color gradientEnd = Color(0xFF0D47A1);
+  static const Color gradientStart = Color(0xFF0055F5); // Bright Blue
+  static const Color gradientEnd = Color(0xFF041E42); // Deep Blue
 
   /// Primary gradient used across app bars, buttons, and hero sections.
   static const LinearGradient primaryGradient = LinearGradient(

@@ -11,6 +11,7 @@ import 'package:ns_transport/core/theme/app_theme.dart';
 import 'package:ns_transport/widgets/app_drawer.dart';
 import 'package:ns_transport/routes/app_routes.dart';
 import 'package:ns_transport/screens/owner/driver_management_screen.dart';
+import 'package:ns_transport/widgets/notification_bell.dart';
 
 class OwnerDashboard extends ConsumerStatefulWidget {
   const OwnerDashboard({super.key});
@@ -234,6 +235,10 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> with SingleTick
             bottom: Radius.circular(24),
           ),
         ),
+        actions: const [
+          NotificationBell(),
+          SizedBox(width: 8),
+        ],
       ),
       drawer: const AppDrawer(),
       body: tripState.isLoading

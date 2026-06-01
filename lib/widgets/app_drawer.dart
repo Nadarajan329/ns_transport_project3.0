@@ -120,11 +120,10 @@ class AppDrawer extends ConsumerWidget {
                   title: AppTranslations.get('logout', locale),
                   color: Colors.red,
                   onTap: () async {
-                    Navigator.pop(context); // Close drawer
+                    final nav = Navigator.of(context);
+                    nav.pop(); // Close drawer
                     await ref.read(authProvider.notifier).signOut();
-                    if (context.mounted) {
-                      Navigator.pushReplacementNamed(context, AppRoutes.login);
-                    }
+                    nav.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
                   },
                 ),
               ],
