@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,8 +23,9 @@ class DriverDashboard extends ConsumerStatefulWidget {
   ConsumerState<DriverDashboard> createState() => _DriverDashboardState();
 }
 
-class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTickerProviderStateMixin {
+class _DriverDashboardState extends ConsumerState<DriverDashboard> with TickerProviderStateMixin {
   late TabController _tabController;
+  late AnimationController _glitterController;
   String _searchQuery = '';
   bool _locationEnabled = false;
 
@@ -31,6 +33,10 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _glitterController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2500),
+    )..repeat();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(tripProvider.notifier).loadTrips();
       _startLocationTracking();
@@ -50,6 +56,7 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
   @override
   void dispose() {
     LocationService.instance.stopTracking();
+    _glitterController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -177,57 +184,85 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
                             ),
                           const SizedBox(height: 20),
                           
-                          // Glassmorphic Statistics Card
+                          // Glassmorphic Statistics Card with Glitter
                           ClipRRect(
                             borderRadius: BorderRadius.circular(16),
                             child: BackdropFilter(
                               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.15),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.2),
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
-                                    _buildStatItem(
-                                      AppTranslations.get('my_trips', locale),
-                                      totalTrips.toString(),
-                                      Icons.local_shipping_outlined,
-                                      isDark,
-                                      locale,
+                              child: AnimatedBuilder(
+                                animation: _glitterController,
+                                builder: (context, child) {
+                                  return Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.15),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.2),
+                                        width: 1.5,
+                                      ),
                                     ),
-                                    Container(
-                                      width: 1,
-                                      height: 40,
-                                      color: Colors.white30,
+                                    child: Stack(
+                                      children: [
+                                        // Shimmer sweep overlay
+                                        Positioned.fill(
+                                          child: IgnorePointer(
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(16),
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                  colors: [
+                                                    Colors.transparent,
+                                                    Colors.white.withValues(alpha: 0.08),
+                                                    Colors.white.withValues(alpha: 0.18),
+                                                    Colors.white.withValues(alpha: 0.08),
+                                                    Colors.transparent,
+                                                  ],
+                                                  stops: [
+                                                    0.0,
+                                                    (_glitterController.value - 0.15).clamp(0.0, 1.0),
+                                                    _glitterController.value,
+                                                    (_glitterController.value + 0.15).clamp(0.0, 1.0),
+                                                    1.0,
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        // Glitter sparkle dots
+                                        ..._buildGlitterDots(_glitterController.value),
+                                        // Content
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                          children: [
+                                            _buildStatItem(
+                                              AppTranslations.get('my_trips', locale),
+                                              totalTrips.toString(),
+                                              Icons.local_shipping_outlined,
+                                              isDark,
+                                              locale,
+                                            ),
+                                            Container(
+                                              width: 1,
+                                              height: 40,
+                                              color: Colors.white30,
+                                            ),
+                                            _buildStatItem(
+                                              AppTranslations.get('earnings', locale),
+                                              Formatters.formatCurrency(totalRent, compact: true),
+                                              Icons.account_balance_wallet_outlined,
+                                              isDark,
+                                              locale,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
-                                    _buildStatItem(
-                                      AppTranslations.get('pending', locale),
-                                      pendingApprovals.toString(),
-                                      Icons.hourglass_empty,
-                                      isDark,
-                                      locale,
-                                    ),
-                                    Container(
-                                      width: 1,
-                                      height: 40,
-                                      color: Colors.white30,
-                                    ),
-                                    _buildStatItem(
-                                      AppTranslations.get('earnings', locale),
-                                      Formatters.formatCurrency(totalRent, compact: true),
-                                      Icons.account_balance_wallet_outlined,
-                                      isDark,
-                                      locale,
-                                    ),
-                                  ],
-                                ),
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -341,6 +376,39 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with SingleTi
         ),
       ],
     );
+  }
+
+  List<Widget> _buildGlitterDots(double animValue) {
+    final random = Random(42); // Fixed seed for consistent positions
+    return List.generate(12, (index) {
+      final dx = random.nextDouble();
+      final dy = random.nextDouble();
+      final phase = (animValue + index * 0.08) % 1.0;
+      final opacity = (sin(phase * pi * 2) * 0.5 + 0.5) * 0.7;
+      final size = 2.0 + random.nextDouble() * 3.0;
+      return Positioned(
+        left: dx * 280,
+        top: dy * 70,
+        child: Opacity(
+          opacity: opacity.clamp(0.0, 1.0),
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildTripList(List<dynamic> list, String emptyMessage, String locale, {bool isDraft = false}) {

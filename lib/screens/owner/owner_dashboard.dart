@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,13 +19,25 @@ class OwnerDashboard extends ConsumerStatefulWidget {
   ConsumerState<OwnerDashboard> createState() => _OwnerDashboardState();
 }
 
-class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
+class _OwnerDashboardState extends ConsumerState<OwnerDashboard> with SingleTickerProviderStateMixin {
+  late AnimationController _glitterController;
+
   @override
   void initState() {
     super.initState();
+    _glitterController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2500),
+    )..repeat();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(tripProvider.notifier).loadTrips();
     });
+  }
+
+  @override
+  void dispose() {
+    _glitterController.dispose();
+    super.dispose();
   }
 
   Future<void> _refresh() async {
@@ -37,73 +50,148 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.1),
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon, color: Theme.of(context).colorScheme.primary, size: 32),
-                const Spacer(),
-                isDark
-                  ? GradientText(
-                      value,
-                      gradient: const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF2979FF)]),
-                      style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold),
-                    )
-                  : Text(
-                      value,
-                      style: AppTheme.getFont(locale, fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: AppTheme.getFont(locale, fontSize: 14, color: Colors.grey.shade400),
+          child: AnimatedBuilder(
+            animation: _glitterController,
+            builder: (context, child) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    width: 1.5,
+                  ),
                 ),
-              ],
-            ),
+                child: Stack(
+                  children: [
+                    // Shimmer sweep
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.transparent,
+                                Colors.white.withValues(alpha: 0.06),
+                                Colors.white.withValues(alpha: 0.15),
+                                Colors.white.withValues(alpha: 0.06),
+                                Colors.transparent,
+                              ],
+                              stops: [
+                                0.0,
+                                (_glitterController.value - 0.15).clamp(0.0, 1.0),
+                                _glitterController.value,
+                                (_glitterController.value + 0.15).clamp(0.0, 1.0),
+                                1.0,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Sparkle dots
+                    ..._buildGlitterDots(_glitterController.value, title.hashCode),
+                    // Content
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(icon, color: Theme.of(context).colorScheme.primary, size: 32),
+                        const Spacer(),
+                        GradientText(
+                          value,
+                          gradient: const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF2979FF)]),
+                          style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          title,
+                          style: AppTheme.getFont(locale, fontSize: 14, color: Colors.grey.shade400),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return AnimatedBuilder(
+      animation: _glitterController,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.05),
+                spreadRadius: 2,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: iconColor, size: 32),
-          const Spacer(),
-          Text(
-            value,
-            style: AppTheme.getFont(locale, fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+          padding: const EdgeInsets.all(16),
+          child: Stack(
+            children: [
+              // Shimmer sweep for light mode
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.transparent,
+                          iconColor.withOpacity(0.03),
+                          iconColor.withOpacity(0.08),
+                          iconColor.withOpacity(0.03),
+                          Colors.transparent,
+                        ],
+                        stops: [
+                          0.0,
+                          (_glitterController.value - 0.15).clamp(0.0, 1.0),
+                          _glitterController.value,
+                          (_glitterController.value + 0.15).clamp(0.0, 1.0),
+                          1.0,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Sparkle dots
+              ..._buildGlitterDots(_glitterController.value, title.hashCode, lightMode: true, accentColor: iconColor),
+              // Content
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, color: iconColor, size: 32),
+                  const Spacer(),
+                  Text(
+                    value,
+                    style: AppTheme.getFont(locale, fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    style: AppTheme.getFont(locale, fontSize: 14, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: AppTheme.getFont(locale, fontSize: 14, color: Colors.grey.shade600),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -227,13 +315,6 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
                           isDark, context, locale
                         ),
                         _buildStatCard(
-                          AppTranslations.get('pending_approvals', locale),
-                          pendingReports.toString(),
-                          Icons.assignment_turned_in,
-                          const Color(0xFFF39C12), // Orange
-                          isDark, context, locale
-                        ),
-                        _buildStatCard(
                           AppTranslations.get('monthly_earnings', locale),
                           '₹${totalIncome.toStringAsFixed(0)}',
                           Icons.trending_up,
@@ -325,5 +406,38 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> {
         ],
       ),
     );
+  }
+
+  List<Widget> _buildGlitterDots(double animValue, int seed, {bool lightMode = false, Color accentColor = Colors.white}) {
+    final random = Random(seed.abs() % 10000);
+    return List.generate(8, (index) {
+      final dx = random.nextDouble();
+      final dy = random.nextDouble();
+      final phase = (animValue + index * 0.12) % 1.0;
+      final opacity = (sin(phase * pi * 2) * 0.5 + 0.5) * (lightMode ? 0.4 : 0.7);
+      final size = 2.0 + random.nextDouble() * 2.5;
+      return Positioned(
+        left: dx * 120,
+        top: dy * 100,
+        child: Opacity(
+          opacity: opacity.clamp(0.0, 1.0),
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: lightMode ? accentColor.withOpacity(0.6) : Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: (lightMode ? accentColor : Colors.white).withValues(alpha: 0.5),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
   }
 }

@@ -127,6 +127,19 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     }
   }
 
+  Future<void> _takePhoto(bool isBill) async {
+    final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+    if (photo != null) {
+      setState(() {
+        if (isBill) {
+          _billImages.add(photo);
+        } else {
+          _receiptImages.add(photo);
+        }
+      });
+    }
+  }
+
   Future<void> _submit(String status) async {
     if (!_formKey.currentState!.validate()) return;
     
@@ -238,6 +251,11 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
               child: Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
             ),
             TextButton.icon(
+              onPressed: () => _takePhoto(isBill),
+              icon: const Icon(Icons.camera_alt, size: 18),
+              label: Text(AppTranslations.get('take_photo', ref.read(localeProvider)), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            ),
+            TextButton.icon(
               onPressed: () => _pickImage(isBill),
               icon: const Icon(Icons.add_photo_alternate, size: 18),
               label: Text(AppTranslations.get('add_images', ref.read(localeProvider)), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
@@ -246,24 +264,67 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         ),
         const SizedBox(height: 8),
         if (images.isEmpty && existingUrls.isEmpty)
-          InkWell(
-            onTap: () => _pickImage(isBill),
-            child: Container(
-              height: 120,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border.all(color: Colors.grey.shade300, width: 1.5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add_photo_alternate, size: 40, color: Colors.grey.shade400),
-                  const SizedBox(height: 8),
-                  Text(AppTranslations.get('tap_select_images', ref.read(localeProvider)), style: GoogleFonts.inter(color: Colors.grey.shade500)),
-                ],
-              ),
+          Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              border: Border.all(color: Colors.grey.shade300, width: 1.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Take Photo option
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _takePhoto(isBill),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1565C0).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.camera_alt, size: 28, color: const Color(0xFF1565C0)),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(AppTranslations.get('take_photo', ref.read(localeProvider)), style: GoogleFonts.inter(color: const Color(0xFF1565C0), fontWeight: FontWeight.w600, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 60,
+                  color: Colors.grey.shade300,
+                ),
+                // Pick from gallery option
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _pickImage(isBill),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1565C0).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.add_photo_alternate, size: 28, color: const Color(0xFF1565C0)),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(AppTranslations.get('add_images', ref.read(localeProvider)), style: GoogleFonts.inter(color: const Color(0xFF1565C0), fontWeight: FontWeight.w600, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           )
         else
