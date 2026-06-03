@@ -9,6 +9,7 @@ import 'package:ns_transport/widgets/custom_button.dart';
 import 'package:ns_transport/widgets/custom_text_field.dart';
 import 'package:ns_transport/providers/auth_provider.dart';
 import 'package:ns_transport/models/user_model.dart';
+import 'package:ns_transport/utils/error_handler.dart';
 import 'dart:ui';
 import 'package:ns_transport/widgets/animated_background.dart';
 import 'package:ns_transport/widgets/custom_logo.dart';
@@ -47,7 +48,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: ${e.toString()}')),
+        SnackBar(content: Text(ErrorHandler.getFriendlyMessage(e))),
       );
       setState(() => _isLoading = false);
     }
@@ -61,7 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google Login failed: ${e.toString()}')),
+        SnackBar(content: Text(ErrorHandler.getFriendlyMessage(e))),
       );
       setState(() => _isLoading = false);
     }
@@ -104,7 +105,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               } catch (e) {
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Failed: $e')),
+                  SnackBar(content: Text(ErrorHandler.getFriendlyMessage(e))),
                 );
               }
             },
@@ -166,7 +167,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   } catch (e) {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed: $e')),
+                      SnackBar(content: Text(ErrorHandler.getFriendlyMessage(e))),
                     );
                   }
                 },

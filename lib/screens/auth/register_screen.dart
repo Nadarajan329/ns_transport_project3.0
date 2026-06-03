@@ -7,6 +7,7 @@ import 'package:ns_transport/routes/app_routes.dart';
 import 'package:ns_transport/widgets/custom_button.dart';
 import 'package:ns_transport/widgets/custom_text_field.dart';
 import 'package:ns_transport/providers/auth_provider.dart';
+import 'package:ns_transport/utils/error_handler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:ui';
 import 'package:ns_transport/widgets/animated_background.dart';
@@ -57,7 +58,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration failed: ${e.toString()}')),
+          SnackBar(content: Text(ErrorHandler.getFriendlyMessage(e))),
         );
       }
       setState(() => _isLoading = false);

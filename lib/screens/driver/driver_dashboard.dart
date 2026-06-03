@@ -146,7 +146,9 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with TickerPr
             final totalTrips = filteredTrips.length;
             final pendingApprovals = filteredTrips.where((t) => t.status == 'submitted').length;
             
-            final double totalDriverSalary = salaryState.value?.fold(0.0, (sum, item) => sum! + item.totalSalary) ?? 0.0;
+            final double totalEarned = activeTrips.fold(0.0, (sum, trip) => sum + (trip.rentAmount * 0.15));
+            final double totalPaid = salaryState.value?.where((s) => s.driverId == user?.id).fold(0.0, (sum, item) => sum! + item.paidAmount) ?? 0.0;
+            final double totalDriverSalary = totalEarned - totalPaid;
 
             return NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -211,35 +213,37 @@ class _DriverDashboardState extends ConsumerState<DriverDashboard> with TickerPr
                                     child: Stack(
                                       children: [
                                         // Shimmer sweep overlay
-                                        Positioned.fill(
-                                          child: IgnorePointer(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(16),
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                  colors: [
-                                                    Colors.transparent,
-                                                    Colors.white.withValues(alpha: 0.08),
-                                                    Colors.white.withValues(alpha: 0.18),
-                                                    Colors.white.withValues(alpha: 0.08),
-                                                    Colors.transparent,
-                                                  ],
-                                                  stops: [
-                                                    0.0,
-                                                    (_glitterController.value - 0.15).clamp(0.0, 1.0),
-                                                    _glitterController.value,
-                                                    (_glitterController.value + 0.15).clamp(0.0, 1.0),
-                                                    1.0,
-                                                  ],
+                                        if (!isDark)
+                                          Positioned.fill(
+                                            child: IgnorePointer(
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  borderRadius: BorderRadius.circular(16),
+                                                  gradient: LinearGradient(
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                    colors: [
+                                                      Colors.transparent,
+                                                      Colors.white.withValues(alpha: 0.08),
+                                                      Colors.white.withValues(alpha: 0.18),
+                                                      Colors.white.withValues(alpha: 0.08),
+                                                      Colors.transparent,
+                                                    ],
+                                                    stops: [
+                                                      0.0,
+                                                      (_glitterController.value - 0.15).clamp(0.0, 1.0),
+                                                      _glitterController.value,
+                                                      (_glitterController.value + 0.15).clamp(0.0, 1.0),
+                                                      1.0,
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                           ),
-                                        ),
                                         // Glitter sparkle dots
-                                        ..._buildGlitterDots(_glitterController.value),
+                                        if (!isDark)
+                                          ..._buildGlitterDots(_glitterController.value),
                                         // Content
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceAround,

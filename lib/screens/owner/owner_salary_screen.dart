@@ -94,7 +94,7 @@ class _OwnerSalaryScreenState extends ConsumerState<OwnerSalaryScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Recorded $paymentType of ₹${amount.toStringAsFixed(2)} for $selectedDriverId',
+                        'Recorded $paymentType of ₹${Formatters.formatNumber(amount)} for $selectedDriverId',
                       ),
                     ),
                   );

@@ -10,6 +10,7 @@ import 'package:ns_transport/models/advance_history_model.dart';
 import 'package:ns_transport/providers/locale_provider.dart';
 import 'package:ns_transport/core/localization/app_translations.dart';
 import 'package:ns_transport/core/theme/app_theme.dart';
+import 'package:ns_transport/utils/formatters.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class EmployeeDetailScreen extends ConsumerStatefulWidget {
@@ -395,7 +396,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                   Expanded(
                     child: _buildAmountCard(
                       AppTranslations.get('advance_balance', locale),
-                      advanceBalance.abs(),
+                      advanceBalance,
                       advanceBalance < 0 ? const Color(0xFFFFEBEE) : const Color(0xFFFFF3E0),
                       advanceBalance < 0 ? const Color(0xFFC62828) : const Color(0xFFEF6C00),
                       Icons.money_off,
@@ -514,7 +515,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
-              isInt ? amount.toInt().toString() : amount.toStringAsFixed(2),
+              isInt ? Formatters.formatNumber(amount, compact: true) : Formatters.formatNumber(amount),
               style: GoogleFonts.inter(
                 color: iconColor,
                 fontSize: 24,
@@ -699,11 +700,11 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
         
         String titleText;
         if (salary.createdAt != null) {
-          titleText = 'Date: ${formatDateTime(salary.createdAt!.toLocal())}';
+          titleText = '${AppTranslations.get('date', locale)}: ${formatDateTime(salary.createdAt!.toLocal())}';
         } else if (salary.day != null) {
-          titleText = 'Date: ${salary.day}/${salary.month}/${salary.year}';
+          titleText = '${AppTranslations.get('date', locale)}: ${salary.day}/${salary.month}/${salary.year}';
         } else {
-          titleText = 'Month: ${salary.month}/${salary.year}';
+          titleText = '${AppTranslations.get('month', locale)}: ${salary.month}/${salary.year}';
         }
 
         final isAdvanceDeduction = salary.advanceAmount > 0;
@@ -715,11 +716,11 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               backgroundColor: isAdvanceDeduction ? const Color(0xFFE3EDF7) : const Color(0xFFE8F5E9),
               child: Icon(isAdvanceDeduction ? Icons.money_off : Icons.payments, color: isAdvanceDeduction ? const Color(0xFF1976D2) : const Color(0xFF2E7D32)),
             ),
-            title: Text(isAdvanceDeduction ? AppTranslations.get('advance_deduction', locale) : titleText, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: isAdvanceDeduction ? Text(titleText, style: const TextStyle(fontSize: 12)) : null,
+            title: Text(isAdvanceDeduction ? AppTranslations.get('advance_deduction', locale) : titleText, style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
+            subtitle: isAdvanceDeduction ? Text(titleText, style: AppTheme.getFont(locale, fontSize: 12)) : null,
             trailing: Text(
-              '+${salary.paidAmount.toStringAsFixed(2)}',
-              style: TextStyle(color: isAdvanceDeduction ? const Color(0xFF1976D2) : const Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 16),
+              '+${Formatters.formatNumber(salary.paidAmount)}',
+              style: AppTheme.getFont(locale, color: isAdvanceDeduction ? const Color(0xFF1976D2) : const Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
         );
@@ -767,6 +768,15 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
         final item = history[index];
         final isGiven = item.type == 'given_by_owner';
         
+        String getLocalizedDesc(String? desc) {
+          if (desc == null || desc.isEmpty) return isGiven ? AppTranslations.get('advance_given', locale) : AppTranslations.get('expense_deducted', locale);
+          String d = desc.trim();
+          if (d.toLowerCase() == 'advance payment' || d == 'முன்பணம்' || d == AppTranslations.get('advance_given', 'ta')) return AppTranslations.get('advance_given', locale);
+          if (d.toLowerCase() == 'rent advance' || d == 'வாடகை முன்பணம்' || d == AppTranslations.get('rent_advance', 'ta')) return AppTranslations.get('rent_advance', locale);
+          if (d.toLowerCase() == 'advance deduction' || d == 'முன்பணம் கழித்தல்' || d == AppTranslations.get('advance_deduction', 'ta')) return AppTranslations.get('advance_deduction', locale);
+          return d;
+        }
+        
         final card = Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -775,10 +785,10 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               backgroundColor: isGiven ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
               child: Icon(isGiven ? Icons.arrow_downward : Icons.arrow_upward, color: isGiven ? const Color(0xFF2E7D32) : const Color(0xFFC62828)),
             ),
-            title: Text(item.description ?? (isGiven ? AppTranslations.get('advance_given', locale) : AppTranslations.get('expense_deducted', locale)), style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
+            title: Text(getLocalizedDesc(item.description), style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
             subtitle: item.createdAt != null ? Text(formatDateTime(item.createdAt!.toLocal()), style: AppTheme.getFont(locale)) : null,
             trailing: Text(
-              '${isGiven ? '+' : '-'}${item.amount.toStringAsFixed(2)}',
+              '${isGiven ? '+' : '-'}${Formatters.formatNumber(item.amount)}',
               style: AppTheme.getFont(locale,
                 color: isGiven ? const Color(0xFF2E7D32) : const Color(0xFFC62828), 
                 fontWeight: FontWeight.bold, 
@@ -949,7 +959,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
                         ),
                         title: Text('${trip.fromLocation} to ${trip.toLocation}', style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
                         subtitle: Text('${AppTranslations.get('date', locale)}: ${trip.tripDate.toString().split(' ')[0]} • ${AppTranslations.get('status', locale)}: ${trip.status.toUpperCase()}', style: AppTheme.getFont(locale)),
-                        trailing: Text('₹${trip.rentAmount.toStringAsFixed(0)}', style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
+                        trailing: Text('₹${Formatters.formatNumber(trip.rentAmount, compact: true)}', style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
                       ),
                     );
                   },

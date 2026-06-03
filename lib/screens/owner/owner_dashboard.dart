@@ -12,6 +12,7 @@ import 'package:ns_transport/widgets/app_drawer.dart';
 import 'package:ns_transport/routes/app_routes.dart';
 import 'package:ns_transport/screens/owner/driver_management_screen.dart';
 import 'package:ns_transport/widgets/notification_bell.dart';
+import 'package:ns_transport/utils/formatters.dart';
 
 class OwnerDashboard extends ConsumerStatefulWidget {
   const OwnerDashboard({super.key});
@@ -66,36 +67,6 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> with SingleTick
                 ),
                 child: Stack(
                   children: [
-                    // Shimmer sweep
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Colors.transparent,
-                                Colors.white.withValues(alpha: 0.06),
-                                Colors.white.withValues(alpha: 0.15),
-                                Colors.white.withValues(alpha: 0.06),
-                                Colors.transparent,
-                              ],
-                              stops: [
-                                0.0,
-                                (_glitterController.value - 0.15).clamp(0.0, 1.0),
-                                _glitterController.value,
-                                (_glitterController.value + 0.15).clamp(0.0, 1.0),
-                                1.0,
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Sparkle dots
-                    ..._buildGlitterDots(_glitterController.value, title.hashCode),
                     // Content
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,7 +292,7 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard> with SingleTick
                         ),
                         _buildStatCard(
                           AppTranslations.get('monthly_earnings', locale),
-                          '₹${totalIncome.toStringAsFixed(0)}',
+                          '₹${Formatters.formatNumber(totalIncome, compact: true)}',
                           Icons.trending_up,
                           const Color(0xFF2ECC71), // Green
                           isDark, context, locale

@@ -13,11 +13,26 @@ class Formatters {
     decimalDigits: 0,
   );
 
+  static final NumberFormat _numberFormat = NumberFormat.decimalPattern('en_IN')
+    ..minimumFractionDigits = 2
+    ..maximumFractionDigits = 2;
+
+  static final NumberFormat _numberFormatCompact = NumberFormat.decimalPattern('en_IN')
+    ..minimumFractionDigits = 0
+    ..maximumFractionDigits = 0;
+
   static String formatCurrency(double amount, {bool compact = false}) {
     if (compact) {
       return _currencyFormatCompact.format(amount);
     }
     return _currencyFormat.format(amount);
+  }
+
+  static String formatNumber(double amount, {bool compact = false}) {
+    if (compact) {
+      return _numberFormatCompact.format(amount);
+    }
+    return _numberFormat.format(amount);
   }
 
   static String formatDate(DateTime date, {String format = 'dd MMM yyyy'}) {

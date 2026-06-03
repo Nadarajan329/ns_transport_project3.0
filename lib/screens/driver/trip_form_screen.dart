@@ -250,16 +250,22 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
             Expanded(
               child: Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
             ),
-            TextButton.icon(
-              onPressed: () => _takePhoto(isBill),
-              icon: const Icon(Icons.camera_alt, size: 18),
-              label: Text(AppTranslations.get('take_photo', ref.read(localeProvider)), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-            ),
-            TextButton.icon(
-              onPressed: () => _pickImage(isBill),
-              icon: const Icon(Icons.add_photo_alternate, size: 18),
-              label: Text(AppTranslations.get('add_images', ref.read(localeProvider)), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-            ),
+            if (images.isNotEmpty || existingUrls.isNotEmpty)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () => _takePhoto(isBill),
+                    icon: const Icon(Icons.camera_alt, color: Color(0xFF1565C0)),
+                    tooltip: AppTranslations.get('take_photo', ref.read(localeProvider)),
+                  ),
+                  IconButton(
+                    onPressed: () => _pickImage(isBill),
+                    icon: const Icon(Icons.add_photo_alternate, color: Color(0xFF1565C0)),
+                    tooltip: AppTranslations.get('add_images', ref.read(localeProvider)),
+                  ),
+                ],
+              ),
           ],
         ),
         const SizedBox(height: 8),
