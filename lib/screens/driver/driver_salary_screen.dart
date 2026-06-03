@@ -26,6 +26,8 @@ class _DriverSalaryScreenState extends ConsumerState<DriverSalaryScreen> {
   final _advanceAmountController = TextEditingController();
   final _advanceDescController = TextEditingController();
 
+  bool _isSubmitting = false;
+
   @override
   void initState() {
     super.initState();
@@ -48,10 +50,13 @@ class _DriverSalaryScreenState extends ConsumerState<DriverSalaryScreen> {
   }
 
   void _recordAdvance() async {
+    if (_isSubmitting) return;
     if (!_advanceFormKey.currentState!.validate()) return;
 
     final amount = double.tryParse(_advanceAmountController.text) ?? 0;
     if (amount <= 0) return;
+
+    setState(() => _isSubmitting = true);
 
     final user = ref.read(authProvider).value;
     final driverId = user?.id ?? '';
@@ -67,9 +72,12 @@ class _DriverSalaryScreenState extends ConsumerState<DriverSalaryScreen> {
       _advanceAmountController.clear();
       _advanceDescController.clear();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${AppTranslations.get('failed_advance', ref.read(localeProvider))}: $e')),
       );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -324,8 +332,10 @@ class _DriverSalaryScreenState extends ConsumerState<DriverSalaryScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: _recordAdvance,
-                icon: const Icon(Icons.check, color: Colors.white),
+                onPressed: _isSubmitting ? null : _recordAdvance,
+                icon: _isSubmitting
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.check, color: Colors.white),
                 label: Text(AppTranslations.get('record_rent_advance', locale), style: AppTheme.getFont(locale, color: Colors.white, fontSize: 16)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFEF6C00),

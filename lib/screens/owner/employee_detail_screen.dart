@@ -34,6 +34,8 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
   final _deductAdvanceFormKey = GlobalKey<FormState>();
   final _deductAdvanceAmountController = TextEditingController();
 
+  bool _isSubmitting = false;
+
   String _selectedDay = DateTime.now().day.toString();
   String _selectedMonth = DateTime.now().month.toString();
   String _selectedYear = DateTime.now().year.toString();
@@ -62,10 +64,13 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
   }
 
   void _recordPayment() async {
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
     final amount = double.tryParse(_amountController.text) ?? 0;
     if (amount <= 0) return;
+
+    setState(() => _isSubmitting = true);
 
     final day = DateTime.now().day;
     final month = DateTime.now().month;
@@ -91,17 +96,23 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
       );
       _amountController.clear();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${AppTranslations.get('failed_payment', ref.read(localeProvider))}: $e')),
       );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
   void _recordAdvance() async {
+    if (_isSubmitting) return;
     if (!_advanceFormKey.currentState!.validate()) return;
 
     final amount = double.tryParse(_advanceAmountController.text) ?? 0;
     if (amount <= 0) return;
+
+    setState(() => _isSubmitting = true);
 
     final driverId = widget.driver['id']?.toString() ?? '';
     final description = _advanceDescController.text.isEmpty ? 'Advance Payment' : _advanceDescController.text;
@@ -116,17 +127,23 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
       _advanceAmountController.clear();
       _advanceDescController.clear();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${AppTranslations.get('failed_advance', ref.read(localeProvider))}: $e')),
       );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
   void _recordAdvanceDeduction() async {
+    if (_isSubmitting) return;
     if (!_deductAdvanceFormKey.currentState!.validate()) return;
 
     final amount = double.tryParse(_deductAdvanceAmountController.text) ?? 0;
     if (amount <= 0) return;
+
+    setState(() => _isSubmitting = true);
 
     final day = DateTime.now().day;
     final month = DateTime.now().month;
@@ -153,9 +170,12 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
       );
       _deductAdvanceAmountController.clear();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${AppTranslations.get('failed_payment', ref.read(localeProvider))}: $e')),
       );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -556,8 +576,10 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: _recordPayment,
-                icon: const Icon(Icons.check, color: Colors.white),
+                onPressed: _isSubmitting ? null : _recordPayment,
+                icon: _isSubmitting
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.check, color: Colors.white),
                 label: Text(AppTranslations.get('record_payment', locale), style: AppTheme.getFont(locale, color: Colors.white, fontSize: 16)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1976D2),
@@ -607,8 +629,10 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: _recordAdvance,
-                icon: const Icon(Icons.check, color: Colors.white),
+                onPressed: _isSubmitting ? null : _recordAdvance,
+                icon: _isSubmitting
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.check, color: Colors.white),
                 label: Text(AppTranslations.get('give_advance', locale), style: AppTheme.getFont(locale, color: Colors.white, fontSize: 16)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFEF6C00),
@@ -649,8 +673,10 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: _recordAdvanceDeduction,
-                icon: const Icon(Icons.check, color: Colors.white),
+                onPressed: _isSubmitting ? null : _recordAdvanceDeduction,
+                icon: _isSubmitting
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.check, color: Colors.white),
                 label: Text(AppTranslations.get('deduct_advance_from_salary', locale), style: AppTheme.getFont(locale, color: Colors.white, fontSize: 16)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1976D2),
@@ -711,23 +737,204 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
         final card = Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: isAdvanceDeduction ? const Color(0xFFE3EDF7) : const Color(0xFFE8F5E9),
-              child: Icon(isAdvanceDeduction ? Icons.money_off : Icons.payments, color: isAdvanceDeduction ? const Color(0xFF1976D2) : const Color(0xFF2E7D32)),
-            ),
-            title: Text(isAdvanceDeduction ? AppTranslations.get('advance_deduction', locale) : titleText, style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
-            subtitle: isAdvanceDeduction ? Text(titleText, style: AppTheme.getFont(locale, fontSize: 12)) : null,
-            trailing: Text(
-              '+${Formatters.formatNumber(salary.paidAmount)}',
-              style: AppTheme.getFont(locale, color: isAdvanceDeduction ? const Color(0xFF1976D2) : const Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onLongPress: () => _showPaymentOptionsSheet(salary, isAdvanceDeduction, locale),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: isAdvanceDeduction ? const Color(0xFFE3EDF7) : const Color(0xFFE8F5E9),
+                child: Icon(isAdvanceDeduction ? Icons.money_off : Icons.payments, color: isAdvanceDeduction ? const Color(0xFF1976D2) : const Color(0xFF2E7D32)),
+              ),
+              title: Text(isAdvanceDeduction ? AppTranslations.get('advance_deduction', locale) : titleText, style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
+              subtitle: isAdvanceDeduction ? Text(titleText, style: AppTheme.getFont(locale, fontSize: 12)) : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '+${Formatters.formatNumber(salary.paidAmount)}',
+                    style: AppTheme.getFont(locale, color: isAdvanceDeduction ? const Color(0xFF1976D2) : const Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(width: 4),
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: Colors.grey.shade500, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _showEditPaymentDialog(salary, isAdvanceDeduction, locale);
+                      } else if (value == 'delete') {
+                        _showDeletePaymentDialog(salary, locale);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(children: [
+                          const Icon(Icons.edit, size: 18, color: Color(0xFF1976D2)),
+                          const SizedBox(width: 8),
+                          Text(AppTranslations.get('edit', locale)),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(children: [
+                          const Icon(Icons.delete, size: 18, color: Color(0xFFC62828)),
+                          const SizedBox(width: 8),
+                          Text(AppTranslations.get('delete', locale), style: const TextStyle(color: Color(0xFFC62828))),
+                        ]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
 
-        return card.animate(onPlay: (controller) => controller.repeat()).shimmer(
-          duration: 1500.ms, 
-          color: isAdvanceDeduction ? Colors.blue.withOpacity(0.3) : Colors.green.withOpacity(0.15),
+        return card;
+      },
+    );
+  }
+
+  void _showPaymentOptionsSheet(SalaryModel salary, bool isAdvanceDeduction, String locale) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const Icon(Icons.edit, color: Color(0xFF1976D2)),
+                  title: Text(AppTranslations.get('edit', locale)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showEditPaymentDialog(salary, isAdvanceDeduction, locale);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Color(0xFFC62828)),
+                  title: Text(AppTranslations.get('delete', locale), style: const TextStyle(color: Color(0xFFC62828))),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showDeletePaymentDialog(salary, locale);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showEditPaymentDialog(SalaryModel salary, bool isAdvanceDeduction, String locale) {
+    final editController = TextEditingController(text: salary.paidAmount.toStringAsFixed(0));
+    final editFormKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(AppTranslations.get('edit_payment', locale), style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
+          content: Form(
+            key: editFormKey,
+            child: TextFormField(
+              controller: editController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: AppTranslations.get('new_amount', locale),
+                prefixIcon: const Icon(Icons.attach_money, color: Color(0xFF1976D2)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              validator: (val) {
+                if (val == null || val.isEmpty) return AppTranslations.get('required', locale);
+                if (double.tryParse(val) == null || double.parse(val) <= 0) return AppTranslations.get('required', locale);
+                return null;
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(AppTranslations.get('cancel', locale)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (!editFormKey.currentState!.validate()) return;
+                final newAmount = double.parse(editController.text);
+                Navigator.pop(ctx);
+                try {
+                  await ref.read(salaryProvider.notifier).updateSalaryEntry(
+                    salary.id!,
+                    newAmount,
+                    isAdvanceDeduction ? newAmount : 0,
+                  );
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(AppTranslations.get('update_success', ref.read(localeProvider)))),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${AppTranslations.get('update_failed', ref.read(localeProvider))}: $e')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1976D2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(AppTranslations.get('save', locale), style: const TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeletePaymentDialog(SalaryModel salary, String locale) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(AppTranslations.get('delete', locale), style: AppTheme.getFont(locale, fontWeight: FontWeight.bold, color: const Color(0xFFC62828))),
+          content: Text(AppTranslations.get('confirm_delete', locale), style: AppTheme.getFont(locale)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(AppTranslations.get('cancel', locale)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                  await ref.read(salaryProvider.notifier).deleteSalaryEntry(salary.id!);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(AppTranslations.get('delete_success', ref.read(localeProvider)))),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${AppTranslations.get('delete_failed', ref.read(localeProvider))}: $e')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC62828),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(AppTranslations.get('delete', locale), style: const TextStyle(color: Colors.white)),
+            ),
+          ],
         );
       },
     );
@@ -780,27 +987,233 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> wit
         final card = Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: isGiven ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
-              child: Icon(isGiven ? Icons.arrow_downward : Icons.arrow_upward, color: isGiven ? const Color(0xFF2E7D32) : const Color(0xFFC62828)),
-            ),
-            title: Text(getLocalizedDesc(item.description), style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
-            subtitle: item.createdAt != null ? Text(formatDateTime(item.createdAt!.toLocal()), style: AppTheme.getFont(locale)) : null,
-            trailing: Text(
-              '${isGiven ? '+' : '-'}${Formatters.formatNumber(item.amount)}',
-              style: AppTheme.getFont(locale,
-                color: isGiven ? const Color(0xFF2E7D32) : const Color(0xFFC62828), 
-                fontWeight: FontWeight.bold, 
-                fontSize: 16
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onLongPress: () => _showAdvanceOptionsSheet(item, locale),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: isGiven ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
+                child: Icon(isGiven ? Icons.arrow_downward : Icons.arrow_upward, color: isGiven ? const Color(0xFF2E7D32) : const Color(0xFFC62828)),
+              ),
+              title: Text(getLocalizedDesc(item.description), style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
+              subtitle: item.createdAt != null ? Text(formatDateTime(item.createdAt!.toLocal()), style: AppTheme.getFont(locale)) : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${isGiven ? '+' : '-'}${Formatters.formatNumber(item.amount)}',
+                    style: AppTheme.getFont(locale,
+                      color: isGiven ? const Color(0xFF2E7D32) : const Color(0xFFC62828), 
+                      fontWeight: FontWeight.bold, 
+                      fontSize: 16
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: Colors.grey.shade500, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _showEditAdvanceDialog(item, locale);
+                      } else if (value == 'delete') {
+                        _showDeleteAdvanceDialog(item, locale);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(children: [
+                          const Icon(Icons.edit, size: 18, color: Color(0xFF1976D2)),
+                          const SizedBox(width: 8),
+                          Text(AppTranslations.get('edit', locale)),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(children: [
+                          const Icon(Icons.delete, size: 18, color: Color(0xFFC62828)),
+                          const SizedBox(width: 8),
+                          Text(AppTranslations.get('delete', locale), style: const TextStyle(color: Color(0xFFC62828))),
+                        ]),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
         );
 
-        return card.animate(onPlay: (controller) => controller.repeat()).shimmer(
-          duration: 1500.ms,
-          color: isGiven ? Colors.green.withOpacity(0.15) : Colors.red.withOpacity(0.15),
+        return card;
+      },
+    );
+  }
+
+  void _showAdvanceOptionsSheet(AdvanceHistoryModel item, String locale) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const Icon(Icons.edit, color: Color(0xFF1976D2)),
+                  title: Text(AppTranslations.get('edit', locale)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showEditAdvanceDialog(item, locale);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Color(0xFFC62828)),
+                  title: Text(AppTranslations.get('delete', locale), style: const TextStyle(color: Color(0xFFC62828))),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showDeleteAdvanceDialog(item, locale);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showEditAdvanceDialog(AdvanceHistoryModel item, String locale) {
+    final editAmountController = TextEditingController(text: item.amount.toStringAsFixed(0));
+    final editDescController = TextEditingController(text: item.description ?? '');
+    final editFormKey = GlobalKey<FormState>();
+    final driverId = widget.driver['id']?.toString() ?? '';
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(AppTranslations.get('edit_advance', locale), style: AppTheme.getFont(locale, fontWeight: FontWeight.bold)),
+          content: Form(
+            key: editFormKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: editAmountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: AppTranslations.get('new_amount', locale),
+                    prefixIcon: const Icon(Icons.attach_money, color: Color(0xFFEF6C00)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return AppTranslations.get('required', locale);
+                    if (double.tryParse(val) == null || double.parse(val) <= 0) return AppTranslations.get('required', locale);
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: editDescController,
+                  decoration: InputDecoration(
+                    labelText: AppTranslations.get('description_optional', locale),
+                    prefixIcon: const Icon(Icons.description, color: Colors.grey),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(AppTranslations.get('cancel', locale)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (!editFormKey.currentState!.validate()) return;
+                final newAmount = double.parse(editAmountController.text);
+                final newDesc = editDescController.text.isEmpty ? (item.description ?? 'Advance Payment') : editDescController.text;
+                Navigator.pop(ctx);
+                try {
+                  await ref.read(advanceHistoryProvider(driverId).notifier).updateAdvanceEntry(
+                    item.id!,
+                    item.amount,
+                    newAmount,
+                    newDesc,
+                    item.type,
+                  );
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(AppTranslations.get('update_success', ref.read(localeProvider)))),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${AppTranslations.get('update_failed', ref.read(localeProvider))}: $e')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF6C00),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(AppTranslations.get('save', locale), style: const TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteAdvanceDialog(AdvanceHistoryModel item, String locale) {
+    final driverId = widget.driver['id']?.toString() ?? '';
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(AppTranslations.get('delete', locale), style: AppTheme.getFont(locale, fontWeight: FontWeight.bold, color: const Color(0xFFC62828))),
+          content: Text(AppTranslations.get('confirm_delete', locale), style: AppTheme.getFont(locale)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(AppTranslations.get('cancel', locale)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                  await ref.read(advanceHistoryProvider(driverId).notifier).deleteAdvanceEntry(
+                    item.id!,
+                    item.amount,
+                    item.type,
+                  );
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(AppTranslations.get('delete_success', ref.read(localeProvider)))),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${AppTranslations.get('delete_failed', ref.read(localeProvider))}: $e')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC62828),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(AppTranslations.get('delete', locale), style: const TextStyle(color: Colors.white)),
+            ),
+          ],
         );
       },
     );

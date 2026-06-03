@@ -128,6 +128,16 @@ class AppTranslations {
       'give_advance': 'Give Advance',
       'deduct_advance_from_salary': 'Deduct Advance for Salary',
       'advance_deduction': 'Advance Deduction',
+      'edit': 'Edit',
+      'delete': 'Delete',
+      'confirm_delete': 'Are you sure you want to delete this entry?',
+      'delete_success': 'Deleted successfully',
+      'delete_failed': 'Failed to delete',
+      'edit_payment': 'Edit Payment',
+      'edit_advance': 'Edit Advance',
+      'update_success': 'Updated successfully',
+      'update_failed': 'Failed to update',
+      'new_amount': 'New Amount',
 
       // Profile & Trips Detail
       'personal_information': 'Personal Information',
@@ -327,6 +337,16 @@ class AppTranslations {
       'give_advance': 'முன்பணம் கொடு',
       'deduct_advance_from_salary': 'சம்பளத்திலிருந்து முன்பணத்தை கழி',
       'advance_deduction': 'முன்பணம் கழித்தல்',
+      'edit': 'திருத்து',
+      'delete': 'நீக்கு',
+      'confirm_delete': 'இந்தப் பதிவை நீக்க விரும்புகிறீர்களா?',
+      'delete_success': 'வெற்றிகரமாக நீக்கப்பட்டது',
+      'delete_failed': 'நீக்குவதில் தோல்வி',
+      'edit_payment': 'கட்டணத்தை திருத்து',
+      'edit_advance': 'முன்பணத்தை திருத்து',
+      'update_success': 'வெற்றிகரமாக புதுப்பிக்கப்பட்டது',
+      'update_failed': 'புதுப்பிப்பதில் தோல்வி',
+      'new_amount': 'புதிய தொகை',
 
       // Profile & Trips Detail
       'personal_information': 'தனிப்பட்ட தகவல்கள்',

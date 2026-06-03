@@ -52,4 +52,33 @@ class AdvanceHistoryNotifier extends StateNotifier<AsyncValue<List<AdvanceHistor
       rethrow;
     }
   }
+
+  Future<void> updateAdvanceEntry(String id, double oldAmount, double newAmount, String description, String type) async {
+    try {
+      final updated = await _advanceService.updateAdvance(id, _driverId, oldAmount, newAmount, description, type);
+      if (state.hasValue) {
+        final list = state.value!;
+        final index = list.indexWhere((a) => a.id == id);
+        if (index >= 0) {
+          final newList = List<AdvanceHistoryModel>.from(list);
+          newList[index] = updated;
+          state = AsyncValue.data(newList);
+        }
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteAdvanceEntry(String id, double amount, String type) async {
+    try {
+      await _advanceService.deleteAdvance(id, _driverId, amount, type);
+      if (state.hasValue) {
+        final newList = state.value!.where((a) => a.id != id).toList();
+        state = AsyncValue.data(newList);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

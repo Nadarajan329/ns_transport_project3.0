@@ -68,4 +68,33 @@ class SalaryService {
       throw ServerFailure(message: 'Failed to upsert salary: $e');
     }
   }
+
+  Future<SalaryModel> updateSalary(String id, double paidAmount, double advanceAmount) async {
+    try {
+      final response = await _supabase
+          .from('salaries')
+          .update({
+            'paid_amount': paidAmount,
+            'advance_amount': advanceAmount,
+          })
+          .eq('id', id)
+          .select()
+          .single();
+      
+      return SalaryModel.fromJson(response);
+    } catch (e) {
+      throw ServerFailure(message: 'Failed to update salary: $e');
+    }
+  }
+
+  Future<void> deleteSalary(String id) async {
+    try {
+      await _supabase
+          .from('salaries')
+          .delete()
+          .eq('id', id);
+    } catch (e) {
+      throw ServerFailure(message: 'Failed to delete salary: $e');
+    }
+  }
 }

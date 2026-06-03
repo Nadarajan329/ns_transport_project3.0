@@ -80,4 +80,60 @@ class AdvanceService {
       throw ServerFailure(message: 'Failed to deduct advance: $e');
     }
   }
+
+  Future<AdvanceHistoryModel> updateAdvance(String id, String driverId, double oldAmount, double newAmount, String description, String type) async {
+    try {
+      // 1. Update the advance_history row
+      final response = await _supabase
+          .from('advance_history')
+          .update({
+            'amount': newAmount,
+            'description': description,
+          })
+          .eq('id', id)
+          .select()
+          .single();
+
+      // 2. Adjust advance_balance in users table
+      final userRes = await _supabase.from('users').select('advance_balance').eq('id', driverId).single();
+      double currentBalance = (userRes['advance_balance'] as num?)?.toDouble() ?? 0.0;
+      
+      double diff = newAmount - oldAmount;
+      if (type == 'given_by_owner') {
+        // If given_by_owner: increasing amount means more advance given
+        await _supabase.from('users').update({'advance_balance': currentBalance + diff}).eq('id', driverId);
+      } else {
+        // If expense_adjustment/deduction: increasing amount means more deducted
+        await _supabase.from('users').update({'advance_balance': currentBalance - diff}).eq('id', driverId);
+      }
+
+      return AdvanceHistoryModel.fromJson(response);
+    } catch (e) {
+      throw ServerFailure(message: 'Failed to update advance: $e');
+    }
+  }
+
+  Future<void> deleteAdvance(String id, String driverId, double amount, String type) async {
+    try {
+      // 1. Delete the advance_history row
+      await _supabase
+          .from('advance_history')
+          .delete()
+          .eq('id', id);
+
+      // 2. Reverse the advance_balance change in users table
+      final userRes = await _supabase.from('users').select('advance_balance').eq('id', driverId).single();
+      double currentBalance = (userRes['advance_balance'] as num?)?.toDouble() ?? 0.0;
+      
+      if (type == 'given_by_owner') {
+        // Reverse: subtract what was given
+        await _supabase.from('users').update({'advance_balance': currentBalance - amount}).eq('id', driverId);
+      } else {
+        // Reverse: add back what was deducted
+        await _supabase.from('users').update({'advance_balance': currentBalance + amount}).eq('id', driverId);
+      }
+    } catch (e) {
+      throw ServerFailure(message: 'Failed to delete advance: $e');
+    }
+  }
 }

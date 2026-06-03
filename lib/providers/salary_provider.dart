@@ -50,8 +50,38 @@ class SalaryNotifier extends StateNotifier<AsyncValue<List<SalaryModel>>> {
       rethrow;
     }
   }
+
+  Future<void> updateSalaryEntry(String id, double newPaidAmount, double newAdvanceAmount) async {
+    try {
+      final updated = await _salaryService.updateSalary(id, newPaidAmount, newAdvanceAmount);
+      if (state.hasValue) {
+        final list = state.value!;
+        final index = list.indexWhere((s) => s.id == id);
+        if (index >= 0) {
+          final newList = List<SalaryModel>.from(list);
+          newList[index] = updated;
+          state = AsyncValue.data(newList);
+        }
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteSalaryEntry(String id) async {
+    try {
+      await _salaryService.deleteSalary(id);
+      if (state.hasValue) {
+        final newList = state.value!.where((s) => s.id != id).toList();
+        state = AsyncValue.data(newList);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
 
 final salaryProvider = StateNotifierProvider<SalaryNotifier, AsyncValue<List<SalaryModel>>>((ref) {
   return SalaryNotifier(ref.watch(salaryServiceProvider), ref);
 });
+
