@@ -40,8 +40,9 @@ abstract final class AppRoutes {
   static const String driverProfileEdit = '/driver/profile-edit';
 
   // ── Route Generator ──────────────────────────────────────────────────
-  static Route<dynamic> _buildRoute(Widget child, {bool isFade = false}) {
+  static Route<dynamic> _buildRoute(RouteSettings settings, Widget child, {bool isFade = false}) {
     return PageRouteBuilder(
+      settings: settings,
       pageBuilder: (context, animation, secondaryAnimation) => child,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         if (isFade) {
@@ -64,58 +65,58 @@ abstract final class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case splash:
-        return _buildRoute(const SplashScreen(), isFade: true);
+        return _buildRoute(settings, const SplashScreen(), isFade: true);
 
       case login:
-        return _buildRoute(const LoginScreen(), isFade: true);
+        return _buildRoute(settings, const LoginScreen(), isFade: true);
 
       case register:
-        return _buildRoute(const RegisterScreen());
+        return _buildRoute(settings, const RegisterScreen());
 
       case ownerDashboard:
-        return _buildRoute(const OwnerDashboard(), isFade: true);
+        return _buildRoute(settings, const OwnerDashboard(), isFade: true);
 
       case driverDashboard:
-        return _buildRoute(const DriverDashboard(), isFade: true);
+        return _buildRoute(settings, const DriverDashboard(), isFade: true);
 
       case tripForm:
         final trip = settings.arguments as TripModel?;
-        return _buildRoute(TripFormScreen(existingTrip: trip));
+        return _buildRoute(settings, TripFormScreen(existingTrip: trip));
 
       case tripDetail:
         final tripId = settings.arguments as String;
-        return _buildRoute(TripDetailScreen(tripId: tripId));
+        return _buildRoute(settings, TripDetailScreen(tripId: tripId));
 
       case driverManagement:
-        return _buildRoute(const DriverManagementScreen());
+        return _buildRoute(settings, const DriverManagementScreen());
 
       case ownerSalary:
-        return _buildRoute(const OwnerSalaryScreen());
+        return _buildRoute(settings, const OwnerSalaryScreen());
 
       case driverSalary:
-        return _buildRoute(const DriverSalaryScreen());
+        return _buildRoute(settings, const DriverSalaryScreen());
 
       case ownerTripReview:
-        return _buildRoute(const OwnerTripReviewScreen());
+        return _buildRoute(settings, const OwnerTripReviewScreen());
 
       case AppRoutes.settings:
-        return _buildRoute(const SettingsScreen());
+        return _buildRoute(settings, const SettingsScreen());
 
       case ownerSubmitted:
-        return _buildRoute(const OwnerSubmittedScreen());
+        return _buildRoute(settings, const OwnerSubmittedScreen());
 
       case employeeDetail:
         final driver = settings.arguments as Map<String, dynamic>;
-        return _buildRoute(EmployeeDetailScreen(driver: driver));
+        return _buildRoute(settings, EmployeeDetailScreen(driver: driver));
 
       case driverLocations:
-        return _buildRoute(const DriverLocationsScreen());
+        return _buildRoute(settings, const DriverLocationsScreen());
 
       case driverProfileEdit:
-        return _buildRoute(const DriverProfileEditScreen());
+        return _buildRoute(settings, const DriverProfileEditScreen());
 
       default:
-        return _buildRoute(const _NotFoundScreen(), isFade: true);
+        return _buildRoute(settings, const _NotFoundScreen(), isFade: true);
     }
   }
 }
