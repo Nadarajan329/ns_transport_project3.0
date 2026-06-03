@@ -5,8 +5,32 @@ import 'package:ns_transport/providers/locale_provider.dart';
 import 'package:ns_transport/core/localization/app_translations.dart';
 import 'package:ns_transport/routes/app_routes.dart';
 
+import 'package:ns_transport/routes/app_routes.dart';
+
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
+
+  void _navigateTo(BuildContext context, String routeName, bool isOwner, bool isDriver) {
+    Navigator.pop(context); // close drawer
+    
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+    final homeRoute = isOwner ? AppRoutes.ownerDashboard : AppRoutes.driverDashboard;
+    
+    if (routeName == homeRoute) {
+      if (currentRoute != homeRoute) {
+        Navigator.popUntil(context, (route) => route.settings.name == homeRoute || route.isFirst);
+      }
+      return;
+    }
+    
+    if (currentRoute == homeRoute) {
+      // Push on top of dashboard so user can slide/swipe back
+      Navigator.pushNamed(context, routeName);
+    } else if (currentRoute != routeName) {
+      // Replace sibling screen to keep the stack flat at [Dashboard, Screen]
+      Navigator.pushReplacementNamed(context, routeName);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -51,28 +75,19 @@ class AppDrawer extends ConsumerWidget {
                     context,
                     icon: Icons.dashboard,
                     title: AppTranslations.get('owner_dashboard', locale),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacementNamed(context, AppRoutes.ownerDashboard);
-                    },
+                    onTap: () => _navigateTo(context, AppRoutes.ownerDashboard, isOwner, isDriver),
                   ),
                   _buildDrawerItem(
                     context,
                     icon: Icons.people,
                     title: AppTranslations.get('drivers_profile', locale),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacementNamed(context, AppRoutes.driverManagement);
-                    },
+                    onTap: () => _navigateTo(context, AppRoutes.driverManagement, isOwner, isDriver),
                   ),
                   _buildDrawerItem(
                     context,
                     icon: Icons.person,
                     title: AppTranslations.get('profile', locale),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacementNamed(context, AppRoutes.settings);
-                    },
+                    onTap: () => _navigateTo(context, AppRoutes.settings, isOwner, isDriver),
                   ),
                 ],
                 if (isDriver) ...[
@@ -80,37 +95,25 @@ class AppDrawer extends ConsumerWidget {
                     context,
                     icon: Icons.dashboard,
                     title: AppTranslations.get('driver_dashboard', locale),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacementNamed(context, AppRoutes.driverDashboard);
-                    },
+                    onTap: () => _navigateTo(context, AppRoutes.driverDashboard, isOwner, isDriver),
                   ),
                   _buildDrawerItem(
                     context,
                     icon: Icons.add_road,
                     title: AppTranslations.get('create_trip', locale),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacementNamed(context, AppRoutes.tripForm);
-                    },
+                    onTap: () => _navigateTo(context, AppRoutes.tripForm, isOwner, isDriver),
                   ),
                   _buildDrawerItem(
                     context,
                     icon: Icons.account_balance_wallet,
                     title: AppTranslations.get('my_salary', locale),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacementNamed(context, AppRoutes.driverSalary);
-                    },
+                    onTap: () => _navigateTo(context, AppRoutes.driverSalary, isOwner, isDriver),
                   ),
                   _buildDrawerItem(
                     context,
                     icon: Icons.person,
                     title: AppTranslations.get('profile', locale),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacementNamed(context, AppRoutes.settings);
-                    },
+                    onTap: () => _navigateTo(context, AppRoutes.settings, isOwner, isDriver),
                   ),
                 ],
                 const Divider(),

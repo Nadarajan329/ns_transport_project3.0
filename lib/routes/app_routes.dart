@@ -40,93 +40,82 @@ abstract final class AppRoutes {
   static const String driverProfileEdit = '/driver/profile-edit';
 
   // ── Route Generator ──────────────────────────────────────────────────
+  static Route<dynamic> _buildRoute(Widget child, {bool isFade = false}) {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => child,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        if (isFade) {
+          return FadeTransition(opacity: animation, child: child);
+        }
+        const begin = Offset(1.0, 0.0);
+        const end = Offset.zero;
+        const curve = Curves.easeInOutCubic;
+        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        
+        return SlideTransition(
+          position: animation.drive(tween),
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 350),
+    );
+  }
+
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case splash:
-        return MaterialPageRoute(
-          builder: (_) => const SplashScreen(),
-        );
+        return _buildRoute(const SplashScreen(), isFade: true);
 
       case login:
-        return MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
-        );
+        return _buildRoute(const LoginScreen(), isFade: true);
 
       case register:
-        return MaterialPageRoute(
-          builder: (_) => const RegisterScreen(),
-        );
+        return _buildRoute(const RegisterScreen());
 
       case ownerDashboard:
-        return MaterialPageRoute(
-          builder: (_) => const OwnerDashboard(),
-        );
+        return _buildRoute(const OwnerDashboard(), isFade: true);
 
       case driverDashboard:
-        return MaterialPageRoute(
-          builder: (_) => const DriverDashboard(),
-        );
+        return _buildRoute(const DriverDashboard(), isFade: true);
 
       case tripForm:
         final trip = settings.arguments as TripModel?;
-        return MaterialPageRoute(
-          builder: (_) => TripFormScreen(existingTrip: trip),
-        );
+        return _buildRoute(TripFormScreen(existingTrip: trip));
 
       case tripDetail:
         final tripId = settings.arguments as String;
-        return MaterialPageRoute(
-          builder: (_) => TripDetailScreen(tripId: tripId),
-        );
+        return _buildRoute(TripDetailScreen(tripId: tripId));
 
       case driverManagement:
-        return MaterialPageRoute(
-          builder: (_) => const DriverManagementScreen(),
-        );
+        return _buildRoute(const DriverManagementScreen());
 
       case ownerSalary:
-        return MaterialPageRoute(
-          builder: (_) => const OwnerSalaryScreen(),
-        );
+        return _buildRoute(const OwnerSalaryScreen());
 
       case driverSalary:
-        return MaterialPageRoute(
-          builder: (_) => const DriverSalaryScreen(),
-        );
+        return _buildRoute(const DriverSalaryScreen());
 
       case ownerTripReview:
-        return MaterialPageRoute(
-          builder: (_) => const OwnerTripReviewScreen(),
-        );
+        return _buildRoute(const OwnerTripReviewScreen());
 
       case AppRoutes.settings:
-        return MaterialPageRoute(
-          builder: (_) => const SettingsScreen(),
-        );
+        return _buildRoute(const SettingsScreen());
 
       case ownerSubmitted:
-        return MaterialPageRoute(
-          builder: (_) => const OwnerSubmittedScreen(),
-        );
+        return _buildRoute(const OwnerSubmittedScreen());
 
       case employeeDetail:
         final driver = settings.arguments as Map<String, dynamic>;
-        return MaterialPageRoute(
-          builder: (_) => EmployeeDetailScreen(driver: driver),
-        );
+        return _buildRoute(EmployeeDetailScreen(driver: driver));
 
       case driverLocations:
-        return MaterialPageRoute(
-          builder: (_) => const DriverLocationsScreen(),
-        );
+        return _buildRoute(const DriverLocationsScreen());
 
       case driverProfileEdit:
-        return MaterialPageRoute(
-          builder: (_) => const DriverProfileEditScreen(),
-        );
+        return _buildRoute(const DriverProfileEditScreen());
 
       default:
-        return MaterialPageRoute(builder: (_) => const _NotFoundScreen());
+        return _buildRoute(const _NotFoundScreen(), isFade: true);
     }
   }
 }
